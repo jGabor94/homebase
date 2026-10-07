@@ -5,6 +5,7 @@
 - Kerüld a kiszervezett CSS stílusokat.
 - Preferáld az inline Tailwind utility classokat közvetlenül a JSX-ben.
 - Külön CSS fájlt csak akkor használj, ha a Tailwind utility classokkal a megoldás indokolatlanul bonyolult vagy nem megvalósítható.
+- Az alkamazás egységes megjelenése és könnyebb karbantarthatóság érdkeében használd ki a táma funkciót aktívan.
 
 ## UI komponensek
 

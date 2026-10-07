@@ -36,7 +36,12 @@ export const customAdapter: Adapter = {
         return null
     },
     async linkAccount(account) {
-        await db.insert(accountsTable).values(account)
+        try {
+            await db.insert(accountsTable).values(account)
+        } catch {
+            // Avoid passing SQL parameters containing OAuth credentials to Auth.js logs.
+            throw new Error("A Google-fiók összekapcsolása nem tárolható.")
+        }
         return account
     },
     async getUserByAccount({ providerAccountId, provider }) {

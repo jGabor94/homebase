@@ -2,6 +2,10 @@ import { RolesWithPermissions } from "./types";
 
 export const ROLES = {
     admin: {
+        monthlyExpenses: {
+            read: true,
+            import: true,
+        },
         allowedGoogleEmail: {
             read: true,
             create: true,

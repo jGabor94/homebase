@@ -15,6 +15,10 @@ export type RolesWithPermissions = {
 }
 
 export type Permissions = {
+    monthlyExpenses: {
+        dataType: never
+        action: "read" | "import"
+    },
     allowedGoogleEmail: {
         dataType: never
         action: "read" | "create" | "delete"
