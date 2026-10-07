@@ -13,7 +13,7 @@ const connect = Dal.create({ cache: false }).authenticate()
     return createErrorReturn({ type: "gmail-owner-required", message: "A Gmail-csatlakoztatást csak a kijelölt tulajdonos indíthatja." });
   }
   try {
-    await signIn("google", { redirectTo: "/monthly-expenses" }, {
+    await signIn("google", { redirectTo: "/app/monthly-expenses" }, {
     scope: "openid email profile https://www.googleapis.com/auth/gmail.readonly",
     access_type: "offline", prompt: "consent", login_hint: expectedEmail,
       include_granted_scopes: "true",

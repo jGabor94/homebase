@@ -1,11 +1,8 @@
 import { db } from "@/drizzle/db"
 import { accountsTable, usersTable } from "@/drizzle/schema"
-import bcrypt from "bcrypt"
 import { and, eq } from "drizzle-orm"
-import NextAuth, { CredentialsSignin } from "next-auth"
-import Credentials from "next-auth/providers/credentials"
+import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
-import { EmailVerifiedError } from "../types"
 import { authConfig } from "./auth.config"
 import { customAdapter } from "./NextAuth_adapter"
 
@@ -22,21 +19,9 @@ export const { handlers: { GET, POST }, auth, signIn, signOut, unstable_update }
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
             allowDangerousEmailAccountLinking: true,
         }),
-        Credentials({
-            credentials: {
-                email: {},
-                password: {}
-            },
-            authorize: async (credentials) => {
-                const [user] = await db.select().from(usersTable).where(eq(usersTable.email, credentials.email as string))
-                if (!user || !bcrypt.compareSync(credentials.password as string, user.password)) throw new CredentialsSignin()
-                else if (!user.emailVerified) throw new EmailVerifiedError()
-                else return user
-
-            },
-        })
     ],
     callbacks: {
+        ...authConfig.callbacks,
         signIn: async ({ account, profile }) => {
             if (account?.provider === "google" && profile?.email_verified !== true) return false
             return true

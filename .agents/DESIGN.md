@@ -2,7 +2,7 @@
 
 ## Irány és referencia
 
-A Homebase privát családi tér: barátságos, otthonos és nyugodt, nem vállalati dashboard. A főoldal vizuális referenciája az `output/imagegen/homebase-dashboard-v2.png` kép. A felület valódi HTML-elemekből épül, nem a képből készült háttér.
+A Homebase privát családi tér: barátságos, otthonos és nyugodt, nem vállalati dashboard. Az /app áttekintés vizuális referenciája az `output/imagegen/homebase-dashboard-v2.png` kép. A felület valódi HTML-elemekből épül, nem a képből készült háttér.
 
 Minimalista csempés elrendezés, jól olvasható tartalom, sok levegő. Kerülendők a gradiensek, glassmorphism, neon/lila hangsúlyok, túlzott animációk, marketingblokkok és dekorációs zsúfoltság.
 
@@ -33,9 +33,13 @@ A globális CSS-ben shadcn-kompatibilis szemantikus változók és Tailwind v4 `
 - Tartalomszélesség legfeljebb 1280 px, csempék között 20–24 px. Desktopon 24–28 px belső tér, mobilon 20 px.
 - Lucide vonalas ikonok. A házikó a márkajel része, egy apró nap a köszöntésnél az egyetlen hangsúlyos dekoráció.
 
-## Főoldal
+## Publikus és hitelesített felület
 
-1. Fejléc: homebase márkajel, Áttekintés / Közművek / Jegyzetek navigáció, J monogramos profiljelzés.
+A `/` publikus landing rövid bemutatkozást és belépési hivatkozást tartalmaz. A `/login` kizárólag Google-belépést kínál. A dashboard és a feature-oldalak az `/app` alatt közös shadcn Sidebar layoutot használnak. A sidebar Radix / new-york alapú, az eredeti meleg téma sidebar tokenjeivel. Desktopon oldalsáv, mobilon fókuszkezelt nyitható panel működik. Részletek: [routing és auth](../src/docs/engineering/active/app-routing-auth-sidebar.md).
+
+## App áttekintés
+
+1. Közös sidebar: homebase márkajel, Áttekintés / Közművek / Jegyzetek / Beállítások navigáció, valós session-profil és kijelentkezés. A közművek és beállítások a meglévő jogosultság szerint látszanak. A tartalom felett navigációkapcsoló és rövid kísérőszöveg van; az oldalaknak nincs külön menüjük.
 2. Köszöntés és a bemutatott hónap: 2026. szeptember.
 3. Desktopon két oszlop: kb. 58% „A havi közös”, 42% „Így alakult a rezsi”. Tablet és mobil méreten a panelek egymás alá kerülnek.
 4. Számlák: gáz 12 400 Ft, villany 18 600 Ft, víz 8 200 Ft, hulladék 4 800 Ft; közművek összesen 44 000 Ft. Hitel 81 000 Ft. Teljes összeg 125 000 Ft, utalandó fele 62 500 Ft. A generált kép 124 000 / 62 000 Ft összege számtani hiba, a megvalósítás a tételekből számolja a helyes összeget.
@@ -44,11 +48,10 @@ A globális CSS-ben shadcn-kompatibilis szemantikus változók és Tailwind v4 `
 
 ## Mock működés és hozzáférhetőség
 
-- A főoldal kizárólag fiktív mintaadatokat használ. Ezt egy visszafogott rövid megjegyzés jelzi.
+- Az /app áttekintés kizárólag fiktív mintaadatokat használ. Ezt egy visszafogott rövid megjegyzés jelzi.
 - A navigáció létező oldalszakaszokhoz vezet. Még nem megvalósított művelet nem tettetheti az adatmentést vagy levélküldést; a bemutató műveletek legyenek egyértelműen letiltva vagy helyi, működő előnézetet nyissanak.
-- Nem része ennek a lépésnek a Gmail, Drive, hitelesítés, adatbázis, valódi jegyzetszerkesztés vagy hónapváltás.
+- Az áttekintés továbbra is bemutató: valódi jegyzetszerkesztés és hónapváltás nincs. Az alkalmazás hitelesítését és a közműfeature külön működését a saját aktuális dokumentumaik írják le.
 - Magyar dokumentumnyelv, szemantikus fejléc/nav/main/section, egy h1, következetes címsorhierarchia.
 - A privát/családi állapot szöveggel és ikonnal is jelenjen meg. Dekorációs ikonok ne kerüljenek a képernyőolvasó felolvasásába.
 - Billentyűzettel használható navigáció, látható fókusz, legalább 44 px interaktív célpontok, elegendő kontraszt, vízszintes oldalgörgetés nélkül.
 - Stílusok a JSX Tailwind utility osztályaiban; globális CSS kizárólag a témához és alapbeállításokhoz. Ne kerüljön be nagy diagramkönyvtár egy statikus mock diagram miatt.
-

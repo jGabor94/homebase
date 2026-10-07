@@ -110,8 +110,8 @@ const safeActionResult = <T,>(result: unknown, fallbackMessage = "A közös tét
 
 const revalidatePresetPages = () => {
   try {
-    revalidatePath("/settings");
-    revalidatePath("/monthly-expenses");
+    revalidatePath("/app/settings");
+    revalidatePath("/app/monthly-expenses");
   } catch {
     // The routes read from the database on navigation even if cache invalidation is unavailable.
   }

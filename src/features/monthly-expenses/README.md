@@ -6,7 +6,7 @@ A család kézzel indított havi elszámolásai: számlák előkészítése Gmai
 
 Frissítve: **2026-10-07**. Az aktuális működést ez a README és az aktív mérnöki dokumentumok rögzítik; a [korábbi átadási jegyzet](../../../.claude/handoffs/2026-10-06-182233-monthly-expenses.md) történeti háttér.
 
-Az implementáció a `/monthly-expenses` oldalon érhető el. A főoldal „Közművek” menüpontja ide vezet; a dashboard adatai továbbra is fiktívek. A számlák csak az oldal helyi állapotában élnek, újratöltéskor elvesznek. A saját Gmailből három eredeti októberi PDF letöltése, beolvasása, összevonása és ismételt importja élő próbában sikeres volt.
+Az implementáció a `/app/monthly-expenses` oldalon érhető el. Az `/app` közös shadcn sidebarjának „Közművek” menüpontja ide vezet; a dashboard adatai továbbra is fiktívek. A számlák csak az oldal helyi állapotában élnek, újratöltéskor elvesznek. A saját Gmailből három eredeti októberi PDF letöltése, beolvasása, összevonása és ismételt importja élő próbában sikeres volt.
 
 - [Mérnöki terv](docs/engineering/active/invoice-import.md): működés, adatfolyam, invariánsok, hibakezelés és elfogadási feltételek.
 - [Implementációs terv](docs/implementation/active/invoice-import.md): munkaszakaszok, érintett fájlok, integrációs előfeltételek és célzott ellenőrzések.
