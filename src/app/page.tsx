@@ -1,287 +1,47 @@
 import type { FC } from "react";
-import {
-  CalendarDays,
-  Droplets,
-  FileText,
-  Flame,
-  House,
-  LockKeyhole,
-  Plus,
-  Sun,
-  Settings,
-  Trash2,
-  UsersRound,
-  Zap,
-} from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, House, NotebookPen, ReceiptText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import LandingPromo from "@/features/landing/components/LandingPromo";
 
-const bills = [
-  { label: "MVM · Gáz", amount: 12_400, Icon: Flame },
-  { label: "MVM · Villany", amount: 18_600, Icon: Zap },
-  { label: "ALFÖLDVÍZ", amount: 8_200, Icon: Droplets },
-  { label: "MOHU", amount: 4_800, Icon: Trash2 },
-];
-const loanPayment = 81_000;
-
-const monthlyUtilities = [
-  { month: "Ápr", amount: 34_000 },
-  { month: "Máj", amount: 45_000 },
-  { month: "Jún", amount: 59_000 },
-  { month: "Júl", amount: 49_000 },
-  { month: "Aug", amount: 38_000 },
-  { month: "Szept", amount: 44_000 },
-];
-
-const notes = [
-  {
-    title: "Bevásárlás",
-    content: ["Tej és kenyér", "Mosogatószer", "Gyümölcs"],
-    updated: "Ma frissítve",
-    privacy: "Családi",
-    tone: "bg-note-yellow",
-  },
-  {
-    title: "Hétvégi program",
-    content: ["Szombaton közös ebéd, utána séta."],
-    updated: "Tegnap",
-    privacy: "Családi",
-    tone: "bg-note-peach",
-  },
-  {
-    title: "Ötletek",
-    content: ["Erkély rendbetétele", "Új polc a dolgozószobába"],
-    updated: "3 napja",
-    privacy: "Privát",
-    tone: "bg-note-sage",
-  },
-];
-
-const formatForint = (amount: number) =>
-  `${new Intl.NumberFormat("hu-HU").format(amount)} Ft`;
-
-const Home: FC = () => {
-  const utilitiesTotal = bills.reduce((total, bill) => total + bill.amount, 0);
-  const monthlyTotal = utilitiesTotal + loanPayment;
+const LandingPage: FC = () => {
 
   return (
-    <>
-      <header className="border-b border-border bg-card/80">
-        <div className="mx-auto grid max-w-[1280px] grid-cols-[1fr_auto] gap-x-4 px-5 py-2 sm:flex sm:min-h-[70px] sm:items-center sm:gap-4 sm:py-0 sm:px-8 lg:gap-8 lg:px-10">
-          <a
-            href="#attekintes"
-            className="flex min-h-11 shrink-0 items-center gap-3 text-2xl font-semibold tracking-tight text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-            aria-label="homebase – áttekintés"
-          >
-            <House aria-hidden="true" className="size-8 text-primary" strokeWidth={1.8} />
-            <span>homebase</span>
-          </a>
-
-          <nav aria-label="Fő navigáció" className="col-span-2 -mx-5 flex h-12 items-center justify-around border-t border-border sm:mx-0 sm:h-[70px] sm:gap-6 sm:border-0 lg:gap-10">
-            <a
-              href="#attekintes"
-              aria-current="page"
-              className="flex h-full items-center border-b-[3px] border-accent pt-[3px] text-xs font-semibold text-foreground focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-ring sm:text-sm"
-            >
-              Áttekintés
-            </a>
-            <a
-              href="/monthly-expenses"
-              className="flex min-h-11 items-center px-2 text-xs text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:px-0 sm:text-sm"
-            >
-              Közművek
-            </a>
-            <a
-              href="#jegyzetek"
-              className="flex min-h-11 items-center px-2 text-xs text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:px-0 sm:text-sm"
-            >
-              Jegyzetek
-            </a>
-          </nav>
-
-          <div className="col-start-2 row-start-1 ml-auto flex items-center gap-2">
-            <a href="/settings" aria-label="Beállítások" title="Beállítások" className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-card hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-              <Settings aria-hidden="true" className="size-5" />
-            </a>
-            <div
-              role="img"
-              aria-label="Családi profil: J"
-              className="flex size-11 shrink-0 items-center justify-center rounded-full bg-accent/15 text-base font-medium text-foreground"
-            >
-              J
-            </div>
-          </div>
-        </div>
+    <main className="mx-auto flex min-h-svh w-full max-w-5xl flex-col px-6 py-8 sm:px-10">
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <Link href="/" className="flex min-h-11 items-center gap-3 text-2xl font-semibold tracking-tight">
+          <House aria-hidden="true" className="size-8 text-primary" /> homebase
+        </Link>
+        <Button asChild variant="outline" className="min-h-11">
+          <Link href="/app">Az alkalmazás megnyitása <ArrowRight aria-hidden="true" data-icon="inline-end" /></Link>
+        </Button>
       </header>
-
-      <main id="attekintes" className="mx-auto w-full max-w-[1280px] flex-1 px-5 pb-10 pt-7 sm:px-8 sm:pt-8 lg:px-10">
-        <section className="mb-6 flex flex-col justify-between gap-5 sm:mb-7 sm:flex-row sm:items-center">
-          <div>
-            <div className="flex items-center gap-4">
-              <h1 className="font-serif text-[clamp(3rem,6vw,4.25rem)] font-semibold leading-[1.05] tracking-[-0.045em] text-foreground">
-                Jó itthon.
-              </h1>
-              <Sun aria-hidden="true" className="size-12 text-amber-500 sm:size-14" strokeWidth={1.4} />
-            </div>
-            <p className="mt-1 text-lg text-muted-foreground sm:text-xl">
-              Számlák, tervek és minden, ami közös.
-            </p>
-          </div>
-          <div className="flex min-h-14 w-fit items-center gap-3 rounded-2xl border border-border bg-card px-4 text-sm text-foreground shadow-sm sm:px-5 sm:text-base">
-            <CalendarDays aria-hidden="true" className="size-5 text-primary" />
-            <span>2026. szeptember</span>
-          </div>
-        </section>
-
-        <div className="grid gap-5 lg:grid-cols-[1.45fr_1fr]">
-          <section
-            id="kozos"
-            aria-labelledby="monthly-heading"
-            className="rounded-[20px] border border-border bg-card p-5 shadow-[0_8px_24px_rgba(91,61,36,0.06)] sm:p-7"
-          >
-            <h2 id="monthly-heading" className="font-serif text-[28px] font-semibold leading-tight text-foreground">
-              A havi közös
-            </h2>
-            <p className="mt-1 text-base text-muted-foreground">Szeptemberi elszámolás</p>
-
-            <ul className="mt-3" aria-label="Szeptemberi számlák">
-              {bills.map(({ label, amount, Icon }) => (
-                <li key={label} className="flex min-h-11 items-center gap-4 border-b border-border/80 text-[15px] sm:text-base">
-                  <Icon aria-hidden="true" className="size-6 shrink-0 text-primary" strokeWidth={1.8} />
-                  <span>{label}</span>
-                  <span className="ml-auto tabular-nums">{formatForint(amount)}</span>
-                </li>
-              ))}
-              <li className="flex min-h-11 items-center gap-4 border-b border-border/80 text-[15px] sm:text-base">
-                <House aria-hidden="true" className="size-6 shrink-0 text-primary" strokeWidth={1.8} />
-                <span>Hitel</span>
-                <span className="ml-auto tabular-nums">{formatForint(loanPayment)}</span>
-              </li>
-            </ul>
-
-            <dl className="mt-2 space-y-1 text-base sm:text-lg">
-              <div className="flex min-h-11 items-center justify-between border-b border-border/80 font-semibold">
-                <dt>Összesen</dt>
-                <dd className="tabular-nums">{formatForint(monthlyTotal)}</dd>
-              </div>
-              <div className="flex min-h-11 items-center justify-between">
-                <dt>Utalandó fele</dt>
-                <dd className="font-semibold tabular-nums">{formatForint(monthlyTotal / 2)}</dd>
-              </div>
-            </dl>
-
-            <details className="group mt-3">
-              <summary className="flex min-h-12 w-fit cursor-pointer list-none items-center gap-3 rounded-xl bg-primary px-5 text-primary-foreground shadow-sm transition-[filter] hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
-                <FileText aria-hidden="true" className="size-5" />
-                Kimutatás megnyitása
-              </summary>
-              <div className="mt-3 rounded-xl border border-border bg-background p-4 text-sm text-muted-foreground">
-                <p className="font-medium text-foreground">Szeptemberi minta kimutatás</p>
-                <p className="mt-1">Közművek: {formatForint(utilitiesTotal)} · Hitel: {formatForint(loanPayment)}</p>
-                <p className="mt-1">Teljes összeg: {formatForint(monthlyTotal)} · Fejenként: {formatForint(monthlyTotal / 2)}</p>
-              </div>
-            </details>
-          </section>
-
-          <section
-            id="rezsi"
-            aria-labelledby="utilities-heading"
-            className="rounded-[20px] border border-border bg-card p-5 shadow-[0_8px_24px_rgba(91,61,36,0.06)] sm:p-7"
-          >
-            <h2 id="utilities-heading" className="font-serif text-[28px] font-semibold leading-tight text-foreground">
-              Így alakult a rezsi
-            </h2>
-            <p className="mt-1 text-base text-muted-foreground">Közművek · hitel nélkül</p>
-
-            <figure className="mt-5" aria-labelledby="chart-caption">
-              <figcaption id="chart-caption" className="sr-only">
-                Hat havi közműköltség, forintban. A szeptemberi érték 44 000 forint.
-              </figcaption>
-              <div className="flex h-[190px] gap-3" aria-hidden="true">
-                <div className="flex h-full flex-col justify-between text-xs text-muted-foreground">
-                  <span>80 000</span><span>60 000</span><span>40 000</span><span>20 000</span><span>0</span>
-                </div>
-                <div className="relative flex h-full flex-1 items-end justify-around border-b border-l border-border px-1">
-                  <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-                    {[80_000, 60_000, 40_000, 20_000].map((value) => (
-                      <span
-                        key={value}
-                        className="absolute left-0 right-0 border-t border-border/80"
-                        style={{ top: `${100 - (value / 80_000) * 100}%` }}
-                      />
-                    ))}
-                  </div>
-                  {monthlyUtilities.map(({ month, amount }) => (
-                    <div key={month} className="z-10 flex h-full w-[13%] flex-col items-center justify-end">
-                      <div
-                        className="w-full rounded-t-[5px] bg-accent/90"
-                        style={{ height: `${(amount / 80_000) * 100}%` }}
-                      />
-                      <span className="absolute -bottom-7 text-xs text-muted-foreground">{month}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <ul className="sr-only">
-                {monthlyUtilities.map(({ month, amount }) => (
-                  <li key={month}>{month}: {formatForint(amount)}</li>
-                ))}
-              </ul>
-            </figure>
-
-            <div className="mt-10 flex min-h-12 items-center justify-between border-t border-border text-base">
-              <span>Szeptember</span>
-              <strong className="text-lg tabular-nums">{formatForint(utilitiesTotal)}</strong>
-            </div>
-          </section>
+      <section className="flex flex-1 flex-col justify-center py-16 sm:py-24">
+        <p className="mb-4 text-sm font-medium tracking-wide text-primary">A család közös tere</p>
+        <h1 className="max-w-2xl font-serif text-6xl font-semibold leading-tight tracking-tight sm:text-7xl">Jó itthon.</h1>
+        <p className="mt-5 max-w-xl text-xl leading-relaxed text-muted-foreground">Számlák, tervek és minden, ami közös. Egy nyugodt hely a család mindennapi dolgaihoz.</p>
+        <Button asChild size="lg" className="mt-8 min-h-12 w-fit rounded-xl">
+          <Link href="/login">Bejelentkezés Google-fiókkal <ArrowRight aria-hidden="true" data-icon="inline-end" /></Link>
+        </Button>
+        <div className="mt-12">
+          <LandingPromo />
         </div>
-
-        <section id="jegyzetek" aria-labelledby="notes-heading" className="mt-7">
-          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-            <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
-              <h2 id="notes-heading" className="font-serif text-[30px] font-semibold leading-tight text-foreground">
-                A hűtőajtón
-              </h2>
-              <p className="text-sm text-muted-foreground sm:text-base">Közös és saját jegyzeteink</p>
-            </div>
-            <button
-              type="button"
-              disabled
-              title="Jegyzet létrehozása később lesz elérhető."
-              className="inline-flex min-h-11 cursor-not-allowed items-center gap-2 rounded-lg px-2 text-sm font-medium text-accent opacity-75"
-            >
-              <Plus aria-hidden="true" className="size-5" />
-              Új jegyzet
-            </button>
-          </div>
-
-          <ul className="grid gap-4 md:grid-cols-3">
-            {notes.map(({ title, content, updated, privacy, tone }) => (
-              <li key={title} className={`min-h-[190px] rounded-[19px] border border-border/70 ${tone} p-5`}>
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-xl font-semibold text-foreground">{title}</h3>
-                  <span className="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-full bg-foreground/[0.06] px-3 text-xs font-medium text-foreground">
-                    {privacy === "Privát" ? (
-                      <LockKeyhole aria-hidden="true" className="size-4" />
-                    ) : (
-                      <UsersRound aria-hidden="true" className="size-4" />
-                    )}
-                    {privacy}
-                  </span>
-                </div>
-                <ul className="mt-2 space-y-0.5 text-[15px] leading-6 text-foreground">
-                  {content.map((line) => <li key={line}>{line}</li>)}
-                </ul>
-                <p className="mt-4 text-sm text-muted-foreground">{updated}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <footer className="mt-7 border-t border-border pt-4 text-center text-xs text-muted-foreground">
-          Bemutató · mintaadatok
-        </footer>
-      </main>
-    </>
+        <div className="mt-14 grid gap-5 sm:grid-cols-2">
+          <article className="rounded-2xl border bg-card p-6">
+            <ReceiptText aria-hidden="true" className="mb-4 size-7 text-primary" />
+            <h2 className="font-serif text-2xl font-semibold">Közös kiadások</h2>
+            <p className="mt-2 leading-relaxed text-muted-foreground">Havi közműszámlák beolvasása és átlátható összesítése, egy helyen.</p>
+          </article>
+          <article className="rounded-2xl border bg-note-sage p-6">
+            <NotebookPen aria-hidden="true" className="mb-4 size-7 text-primary" />
+            <h2 className="font-serif text-2xl font-semibold">A hűtőajtón</h2>
+            <p className="mt-2 leading-relaxed text-muted-foreground">A közös és személyes jegyzetek otthona készülőben van. Az alkalmazásban már megnézheted a bemutatóját.</p>
+          </article>
+        </div>
+      </section>
+      <footer className="text-sm text-muted-foreground">homebase · A család saját használatára.</footer>
+    </main>
   );
 };
 
-export default Home;
+export default LandingPage;

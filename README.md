@@ -6,11 +6,13 @@ A Homebase egy privát, családi használatra készülő webalkalmazás. Célja,
 
 Frissítve: **2026-10-07**. Az aktuális működést ez a README és a feature dokumentációja írja le. A [korábbi átadási jegyzet](.claude/handoffs/2026-10-06-182233-monthly-expenses.md) az azóta továbbfejlesztett állapot történeti háttere.
 
-A főoldal a családi dashboard látványtervét valósítja meg fiktív közműadatokkal, diagrammal és jegyzetekkel. A **Havi kiadások** oldal (`/monthly-expenses`) már külön, bejelentkezéssel védett funkció: kézi számlafelvitel, PDF-beolvasás, saját Gmailből indított import és szerkeszthető havi összesítés. Számla nélkül előre felvehető névvel és összeggel egy ismert tétel; amikor megérkezik a számlája, az előre felvett sort kézzel kell törölni. A kimutatás egyelőre csak a nyitott oldalon él, újratöltéskor elvész; exportja későbbi funkció. A Gmail és az AI használatához saját konfiguráció szükséges; a számlatörténet, tartós mentés és jegyzetkezelés későbbi feladat. Részletek a [feature leírásában](src/features/monthly-expenses/README.md), a megjelenés szabályai a [design dokumentumban](.agents/DESIGN.md).
+A publikus főoldal (`/`) bemutatja az alkalmazást; a kizárólag Google-belépést kínáló `/login` oldal után az `/app` alatti családi dashboard látványterve jelenik meg fiktív közműadatokkal, diagrammal és jegyzetekkel. A **Havi kiadások** oldal (`/app/monthly-expenses`) már külön, bejelentkezéssel védett funkció: kézi számlafelvitel, PDF-beolvasás, saját Gmailből indított import és szerkeszthető havi összesítés. Számla nélkül előre felvehető névvel és összeggel egy ismert tétel; amikor megérkezik a számlája, az előre felvett sort kézzel kell törölni. A kimutatás egyelőre csak a nyitott oldalon él, újratöltéskor elvész; exportja későbbi funkció. A Gmail és az AI használatához saját konfiguráció szükséges; a számlatörténet, tartós mentés és jegyzetkezelés későbbi feladat. Részletek a [feature leírásában](src/features/monthly-expenses/README.md), a megjelenés szabályai a [design dokumentumban](.agents/DESIGN.md).
+
+A `/` landing mindenki számára megtekinthető; egy 20 másodperces, néma, szüneteltethető animáció lebegő, perspektívában mozgó alkalmazásnézetekkel és fiktív adatokkal mutatja be a közműösszesítést és a készülő jegyzeteket. Csökkentett mozgás beállításánál statikus előnézet jelenik meg. A `/login` csak vendégeknek jelenik meg; hitelesítve `/app` címre irányít. Az `/app` és aloldalai NextAuth proxy-védelemmel és szerveroldali ellenőrzéssel működnek. A régi `/monthly-expenses` és `/settings` címek az új app útvonalakra irányítanak. Részletek: [app routing és auth](src/docs/engineering/active/app-routing-auth-sidebar.md).
 
 ## Havi közmű kimutatás
 
-A fogaskerekes **Beállítások** oldalon a család közös átalányai és más tételsablonjai tartósan menthetők. Minden, a Havi kiadásokhoz jogosult felhasználó ugyanazt a listát kezeli. Az összegzésben mentett sablon vagy egyedi tétel választható; a havi kimutatásba kerülő másolat megőrzi a hozzáadáskori nevet és összeget.
+Az app sidebarjából elérhető **Beállítások** oldalon (`/app/settings`) a család közös átalányai és más tételsablonjai tartósan menthetők. Minden, a Havi kiadásokhoz jogosult felhasználó ugyanazt a listát kezeli. Az összegzésben mentett sablon vagy egyedi tétel választható; a havi kimutatásba kerülő másolat megőrzi a hozzáadáskori nevet és összeget.
 Az alapértelmezettnek jelölt sablonok automatikusan, külön másolatként kerülnek az új kimutatásba. A havi összegzés a számlákat és a felvett tételeket tartalmazza; nincs automatikusan hozzáadott hitelösszeg.
 
 Az **Összegzés** tételei egy sorban jelennek meg névvel, szerkeszthető összeggel és törlésgombbal. A mentett sablon neve sima szöveg, az egyedi tételé szerkeszthető. A „Tétel hozzáadása” megnyitja a választót, és automatikusan betölti a közös sablonokat; külön frissítésgomb nincs. Az „Összesen” után egyetlen „Fele” sor látszik, egész forintra kerekített összeggel. A háttérben a számítás fillérpontos marad. A közös sablonok működését a [mérnöki dokumentáció](src/features/monthly-expenses/docs/engineering/active/expense-presets.md) részletezi.
@@ -97,7 +99,7 @@ npm install
 npm run dev
 ```
 
-Az alkalmazás alapértelmezetten a [localhost:3000](http://localhost:3000) címen érhető el. A főoldal mock adatokat mutat; a Havi kiadások funkció beállításait és jelenlegi korlátait a [feature dokumentációja](src/features/monthly-expenses/README.md) tartalmazza.
+Az alkalmazás alapértelmezetten a [localhost:3000](http://localhost:3000) címen érhető el. A publikus landing mellett az `/app` áttekintés mock adatokat mutat; a Havi kiadások funkció beállításait és jelenlegi korlátait a [feature dokumentációja](src/features/monthly-expenses/README.md) tartalmazza.
 
 ## Tervezett fejlesztési sorrend
 
