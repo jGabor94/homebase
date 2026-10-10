@@ -6,7 +6,7 @@ Frissítve: **2026-10-07**. Implementált első kör, helyi ellenőrzések és r
 
 A család kiválasztott hónapra kézzel indít kimutatást. Számlák Gmailből, PDF-feltöltésből és kézi bevitellel kerülnek a szerkeszthető űrlapra; a közös alapértelmezett sablonok csak az indításkor másolódnak be. A számlák és felvett tételek 50–50% megosztása egész fillérrel, kódosan készül, beépített hitelösszeg nélkül.
 
-Az űrlap csak az oldal helyi állapotában él, újratöltéskor elvész. Az OAuth-hozzáférés a meglévő account táblában tartós, de nincs számla-adatbázis, kimutatástörténet, automatikus mentés, export, Drive-művelet vagy e-mail-küldés. A főoldal továbbra is mock dashboard. Ezek külön későbbi feladatok.
+Az űrlap csak az oldal helyi állapotában él, újratöltéskor elvész. Az OAuth-hozzáférés a meglévő account táblában tartós, de nincs számla-adatbázis, kimutatástörténet, automatikus mentés vagy Drive-művelet. Az összegzés külön [exportfolyamata](summary-export.md) PDF/PNG/TXT letöltést és mellékletes e-mail-küldést biztosít. A Mentés csak letiltott helyőrző; később kizárólag a számlákat tárolja. A főoldal továbbra is mock dashboard. Ezek külön későbbi feladatok.
 
 ## Felhasználói folyamat és mezők
 
@@ -40,7 +40,7 @@ Hiányzó érték nem kap becsült összeget vagy mai dátumot. Az időszak, tel
 Gmailből csak MVM gáz/villany, ALFÖLDVÍZ és MOHU kerülhet be; manuális import más szolgáltatót is enged. A hónap a levél kiküldése alapján, Europe/Budapest időzónában értendő, nem a fogyasztási időszak szerint. A már kifizetett számla is közös költség.
 
 - Admin jogosultság, kijelölt tulajdonos és tényleges Google-postafiók ellenőrzése szerveroldalon. Másik admin nem kap hozzáférést a tulajdonos Gmailjéhez.
-- Külön OAuth-consent: alap Google-scope-ok és `gmail.readonly`, offline hozzáféréssel. Nincs küldési vagy írási jog. A Google-projektben Gmail API és megfelelő consent/tesztfelhasználó szükséges.
+- Külön OAuth-consent: alap Google-scope-ok és `gmail.readonly`, offline hozzáféréssel. Az import nem kér küldési vagy írási jogot. Az exportmodal külön engedélykérése adhat gmail.send scope-ot. A Google-projektben Gmail API és megfelelő consent/tesztfelhasználó szükséges.
 - Access/refresh token, scope és lejárat a meglévő account táblában; OAuth-token nem kerül a kliensre. Új engedélyezéskor hiányzó új refresh token nem törli a meglévőt.
 - A route védett DAL-lekérdezéssel olvassa a mentett scope-ot, lejáratot és tokenlétezési jelzőket. Megújítható vagy még használható kapcsolatnál „E-mailekből”, egyébként összekapcsolás látszik. Ez tárolt állapot, nem élő Google-ellenőrzés; a tényleges hozzáférést az import igazolja.
 - Visszavonás/hiányzó scope `gmail-reconnect-required` hibát ad, és visszahozza a kapcsolódási műveletet. Kvóta, hálózati vagy letiltott API-hiba nem kér automatikusan új consentet.

@@ -4,7 +4,7 @@ A család kézzel indított havi elszámolásai: számlák előkészítése Gmai
 
 ## Állapot
 
-Frissítve: **2026-10-07**. Az aktuális működést ez a README és az aktív mérnöki dokumentumok rögzítik; a [korábbi átadási jegyzet](../../../.claude/handoffs/2026-10-06-182233-monthly-expenses.md) történeti háttér.
+Frissítve: **2026-10-10**. Az aktuális működést ez a README és az aktív mérnöki dokumentumok rögzítik; a [korábbi átadási jegyzet](../../../.claude/handoffs/2026-10-06-182233-monthly-expenses.md) történeti háttér.
 
 Az implementáció a `/app/monthly-expenses` oldalon érhető el. Az `/app` közös shadcn sidebarjának „Közművek” menüpontja ide vezet; a dashboard adatai továbbra is fiktívek. A számlák csak az oldal helyi állapotában élnek, újratöltéskor elvesznek. A saját Gmailből három eredeti októberi PDF letöltése, beolvasása, összevonása és ismételt importja élő próbában sikeres volt.
 
@@ -12,6 +12,7 @@ Az implementáció a `/app/monthly-expenses` oldalon érhető el. Az `/app` köz
 - [Implementációs terv](docs/implementation/active/invoice-import.md): munkaszakaszok, érintett fájlok, integrációs előfeltételek és célzott ellenőrzések.
 - [Közös sablonok mérnöki leírása](docs/engineering/active/expense-presets.md): hozzáférés, tartós tárolás és helyi másolatok.
 - [Alapértelmezett sablonok](docs/implementation/archive/preset-defaults.md): befejezett implementáció és adatbázisos ellenőrzés.
+- [Összegzés exportjának implementációja](docs/implementation/archive/summary-export.md): befejezett export, levélküldés és ellenőrzési eredmények.
 
 ## Első fejlesztési kör
 
@@ -23,7 +24,7 @@ Az implementáció a `/app/monthly-expenses` oldalon érhető el. Az `/app` köz
 - A **Beállítások** oldalon közös, több eszközről elérhető tételsablonok hozhatók létre, szerkeszthetők és törölhetők. Az alapértelmezettnek jelölt sablonok az új kimutatás indításakor automatikusan másolatként kerülnek be; a későbbi sablonmódosítás vagy törlés nem változtatja meg a havi sort.
 - Vercel AI SDK + AI Gateway csak a szükséges adatkinyeréshez; kódos keresés, normalizálás, validálás, duplikációszűrés és számolás.
 
-Nem tartozik ide a számlák és kimutatások adatbázisos mentése, PNG-exportja, Drive-mentése vagy e-mail-küldése; az export későbbi funkció. A közös sablonok `expense_presets` adatbázis-táblája létrejött, tárolásuk tartós. Az OAuth-hozzáférés a meglévő hitelesítési infrastruktúrát használja, elkülönítve a későbbi számlatárolástól.
+Az oldalsó összegzés PDF-, PNG- vagy TXT-fájlként letölthető és Gmailen elküldhető. A Mentés letiltott helyőrző; a későbbi művelet csak a tényleges számlákat tárolja. Számla-adatbázis és Drive-mentés nincs. A közös sablonok `expense_presets` adatbázis-táblája létrejött, tárolásuk tartós. Az OAuth-hozzáférés a meglévő hitelesítési infrastruktúrát használja, elkülönítve a későbbi számlatárolástól.
 
 Az általános fejlesztési szabályokat a [feature-konvenciók](../AGENTS.md), a megjelenést a [Homebase design](../../../.agents/DESIGN.md) írja le.
 
@@ -85,6 +86,12 @@ A gyűjtés `complete` jelzője kizárólag a technikai teljességet jelenti: mi
 - A jóváírások, helyesbítések és sztornók, illetve az azonosított kapcsolódó eredetik ebben a verzióban kimaradnak az összegzésből; automatikus nettósításuk még nincs.
 - Az összesítés a számlák és a kézi vagy sablonból másolt tételek összegét fillérpontosan felezi; nincs automatikusan hozzáadott hitelösszeg.
 - A portálbelépést vagy CAPTCHA-t igénylő számláknál manuális PDF-feltöltés szükséges.
-- Nincs automatikus mentés, export, Drive-művelet, levélküldés vagy számlafizetés.
+- Nincs automatikus mentés, Drive-művelet vagy számlafizetés. Az export és a mellékletes levélküldés külön felhasználói gombnyomásra indul.
 
 Célzott tesztek: `npm run test:monthly-expenses` — 2026-10-07-én **54/54 sikeres teszt**, sikeres teljes lint és típusellenőrzés. A 2026-10-05-i élő Gmail-próba két MVM villany- és egy ALFÖLDVÍZ-számlát dolgozott fel, importfigyelmeztetés és mezőhiba nélkül. A fizetendő összegek, határidők, számlaszámok és időszakok ellenőrzése, a különböző PDF-ek megkülönböztetése, az ismételt import duplikációszűrése és az összesítés is átment. Ezeket a szöveges PDF-eket kódosan olvassuk ki, Gateway-hívás nélkül. Az MVM első oldalának szolgáltatása elsőbbséget kap a későbbi energiamix-tájékoztatóval szemben; az ALFÖLDVÍZ külön sorokban tárolt címkéit és értékeit szigorú elrendezésfelismerés kapcsolja össze. A dokumentumazonosító az eredeti bájtok SHA-256 lenyomata, még a parser bufferátadása előtt. A valódi számlák nem kerültek a repositoryba. Szkennelt számlák élő felismerése és a bejelentkezett felület teljes böngészős ellenőrzése még nem igazolt. A részletes eredményeket az implementációs terv rögzíti.
+
+## Összegzés exportja
+
+A PDF és PNG kompakt, mobilra tervezett Homebase-kártyákat használ. A számlanév félkövér, az összeg a jobb felső sarokban van; alatta számlaszám, fizetési határidő és fogyasztási időszak szerepel. Hiányzó alapadatnál „Nincs megadva” látható. A TXT ugyanazokat az adatokat tartalmazza. A PDF szövege vektoros és kijelölhető, a fontok helyben tároltak és beágyazottak. A szokásos havi kimutatás legfeljebb 960 pontos tartalommagasságig egy, tartalomhoz igazított PDF-oldalra kerül; hosszabb listánál lapozódik. A PNG 1296 pixel széles, magassága követi a tartalmat.
+
+Az **Exportálás…** modal PDF, kép (PNG) és szöveg (TXT) választót, letöltést és e-mail-küldést kínál. A teljes oldalsó összegzést exportálja, beleértve a számla nélküli tételeket, összesent és felezést; az eredeti számlafájlokat nem csatolja. A címzett **sz.marcsi85@gmail.com**, a levélsablon előnézete küldés előtt látható. A küldéshez külön **gmail.send** consent kell az olvasási engedély mellé; a Google-átirányítás előtt töltsd le a helyi kimutatást. Nagy mellékletnél a letöltés használható, az e-mail méretkorlátot jelez. Részletek: [export mérnöki leírás](docs/engineering/active/summary-export.md).

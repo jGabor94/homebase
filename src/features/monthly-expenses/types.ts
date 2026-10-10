@@ -34,6 +34,28 @@ export type GmailDocumentReference = z.infer<typeof gmailDocumentReferenceSchema
 export type GmailCollectionResult = z.infer<typeof gmailCollectionResultSchema>;
 export type InvoiceImportResult = z.infer<typeof invoiceImportResultSchema>;
 export type AiInvoiceList = z.infer<typeof aiInvoiceListSchema>;
+export type SummaryExportFormat = "pdf" | "png" | "txt";
+export interface SummaryInvoiceExportRow {
+  category: string;
+  provider: string;
+  amount: string;
+  details: string[];
+}
+export interface SummaryAdditionalExportRow {
+  name: string;
+  amount: string;
+}
+export interface SummaryExportSnapshot {
+  reportMonth: string;
+  monthLabel: string;
+  invoiceLines: string[];
+  additionalLines: string[];
+  invoiceRows: SummaryInvoiceExportRow[];
+  additionalRows: SummaryAdditionalExportRow[];
+  warnings: string[];
+  total: string;
+  half: string;
+}
 export type InvoiceField = InvoiceRowInput["manuallyEditedFields"][number];
 export type InvoiceIssue = InvoiceRowInput["issues"][number];
 export type InvoiceSource = InvoiceRowInput["sources"][number];

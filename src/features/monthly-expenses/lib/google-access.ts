@@ -6,6 +6,7 @@ import { accountsTable } from "@/drizzle/schema";
 import { getGmailAccessErrorMessage, isGmailReconnectRequired } from "./errors";
 
 const gmailScope = "https://www.googleapis.com/auth/gmail.readonly";
+const gmailSendScope = "https://www.googleapis.com/auth/gmail.send";
 
 export class GmailAccessError extends Error {
   constructor(message: string, readonly requiresReconnect = false) {
@@ -16,6 +17,7 @@ export class GmailAccessError extends Error {
 
 export const getGoogleAccess = async (
   user: Session["user"],
+  options: { send?: boolean } = {},
 ): Promise<{ accessToken: string; mailboxEmail: string }> => {
   const expectedEmail = (process.env.MONTHLY_EXPENSES_GMAIL_EMAIL ?? process.env.BOOTSTRAP_ADMIN_EMAIL)?.trim().toLowerCase();
   if (!expectedEmail) throw new GmailAccessError("A saját Gmail-postafiók még nincs kijelölve az alkalmazásban.");
@@ -25,8 +27,11 @@ export const getGoogleAccess = async (
   const [account] = await db.select().from(accountsTable).where(and(
     eq(accountsTable.userId, user.id), eq(accountsTable.provider, "google"),
   )).limit(1);
-  if (!account || !account.scope?.split(/\s+/).includes(gmailScope)) {
-    throw new GmailAccessError("Csatlakoztasd a Gmail-fiókodat olvasási engedéllyel.", true);
+  const requiredScopes = options.send ? [gmailScope, gmailSendScope] : [gmailScope];
+  if (!account || !requiredScopes.every((scope) => account.scope?.split(/\s+/).includes(scope))) {
+    throw new GmailAccessError(options.send
+      ? "A levélküldéshez külön Gmail-küldési engedély szükséges."
+      : "Csatlakoztasd a Gmail-fiókodat olvasási engedéllyel.", true);
   }
   const accountFilter = and(
     eq(accountsTable.userId, user.id), eq(accountsTable.provider, "google"),
@@ -57,7 +62,11 @@ export const getGoogleAccess = async (
       throw new GmailAccessError("A Google nem adott használható hozzáférést. Csatlakoztasd újra a fiókodat.");
     }
     const scope = "scope" in value && typeof value.scope === "string" ? value.scope : account.scope;
-    if (!scope?.split(/\s+/).includes(gmailScope)) throw new GmailAccessError("A Gmail olvasási engedélye hiányzik. Csatlakoztasd újra a fiókodat.", true);
+    if (!requiredScopes.every((required) => scope?.split(/\s+/).includes(required))) {
+      throw new GmailAccessError(options.send
+        ? "A Gmail-küldési engedély hiányzik. Csatlakoztasd újra a fiókodat a küldés engedélyezéséhez."
+        : "A Gmail olvasási engedélye hiányzik. Csatlakoztasd újra a fiókodat.", true);
+    }
     try {
       await db.update(accountsTable).set({
       access_token: value.access_token,

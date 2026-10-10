@@ -58,7 +58,7 @@ Ellenőrzés: `npx tsx --conditions=react-server --test src/features/monthly-exp
 - [x] A hónapváltás megerősítése figyelembe veszi az ilyen tételeket. Az adatok újratöltéskor továbbra is elvesznek.
 - [x] Célzott tesztek készültek a számításra, hiányos/hibás értékekre, nulla összegre, felezésre, szerkesztésre, törlésre és importhatárra.
 
-Az export továbbra sincs megvalósítva. Ellenőrzés: `npx tsx --conditions=react-server --test src/features/monthly-expenses/tests/additional-items.test.ts src/features/monthly-expenses/tests/invoice-import.test.ts` — **14/14 sikeres**; `npx tsc --noEmit` — sikeres. A számolás és a típusintegráció ellenőrzött; böngészős UI-próba, build és lint ebben a munkaszakaszban nem futott.
+Ebben a történeti munkaszakaszban az export még nem volt megvalósítva; az aktuális export külön tervben szerepel. Ellenőrzés: `npx tsx --conditions=react-server --test src/features/monthly-expenses/tests/additional-items.test.ts src/features/monthly-expenses/tests/invoice-import.test.ts` — **14/14 sikeres**; `npx tsc --noEmit` — sikeres. A számolás és a típusintegráció ellenőrzött; böngészős UI-próba, build és lint ebben a munkaszakaszban nem futott.
 
 ## Összegzés és integráció — 2026-10-07
 
@@ -83,4 +83,4 @@ Commit előtti ellenőrzés: `npm run test:monthly-expenses` **54/54 sikeres**, 
 
 A felhasználó felvetette az AI elsődleges olvasóként használatát és a fájlfeltöltés fogyasztását. Nem történt átállás, a költségkutatás félbeszakadt. A tényleges kód továbbra is determinisztikus első lépés + AI-fallback. Az új szálban a költségre adott válasz és a kívánt irány tisztázása előzze meg az átállást; a korábbi felvetést ne nevezd elkészült funkciónak.
 
-Számlák tartós mentése, history/diagram, családi jegyzetek, export/Drive/e-mail és automatikus korrekciós nettósítás külön scope. A jelen terv nem kér migrációt, `.env*` szerkesztést, commitot, push-t vagy deployt.
+Számlák tartós mentése, history/diagram, családi jegyzetek, Drive és automatikus korrekciós nettósítás külön scope. Az export és e-mail a [befejezett exportterv](../archive/summary-export.md) része. A jelen terv nem kér migrációt, `.env*` szerkesztést, commitot, push-t vagy deployt.

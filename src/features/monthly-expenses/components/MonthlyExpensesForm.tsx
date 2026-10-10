@@ -1,22 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent, type FC } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FileUp, LoaderCircle, Mail, Plus, RefreshCw } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
+import { useEffect, useRef, useState, type ChangeEvent, type FC } from "react";
 import { FormProvider, useFieldArray, useForm, useWatch } from "react-hook-form";
+import toast, { Toaster } from "react-hot-toast";
+import { INVOICE_CATEGORY_LABELS, MAX_UPLOAD_BYTES } from "../config";
 import { connectGmail } from "../dal/connection";
 import { collectGmailInvoices, importGmailInvoice } from "../dal/mutations";
-import { INVOICE_CATEGORY_LABELS, MAX_UPLOAD_BYTES } from "../config";
-import type { GmailCandidate, GmailDocumentReference, InvoiceReportInput, InvoiceRowInput, InvoiceSource } from "../types";
-import { createEmptyInvoice, getInvoiceMergeKeys, mergeImportedInvoices, summarizeInvoices } from "../utils";
-import { formatMinorAsHuf } from "../utils/money";
-import { invoiceReportFormSchema } from "../zod/schema";
 import { loadExpensePresets } from "../dal/presets";
-import type { ExpensePresetDto } from "../types";
+import type { ExpensePresetDto, GmailCandidate, GmailDocumentReference, InvoiceReportInput, InvoiceRowInput, InvoiceSource } from "../types";
+import { createEmptyInvoice, getInvoiceMergeKeys, mergeImportedInvoices, summarizeInvoices } from "../utils";
 import { createAdditionalItemFromPreset, createDefaultAdditionalItems } from "../utils/expense-presets";
-import InvoiceRowCard from "./InvoiceRowCard";
+import { formatMinorAsHuf } from "../utils/money";
+import { createSummaryExportSnapshot } from "../utils/summary-export";
+import { invoiceReportFormSchema } from "../zod/schema";
 import AdditionalExpenseRow from "./AdditionalExpenseRow";
+import ExpenseSummaryExportDialog from "./ExpenseSummaryExportDialog";
+import InvoiceRowCard from "./InvoiceRowCard";
 import SourcePreviewDialog from "./SourcePreviewDialog";
 
 type ImportPhase = "searching" | "processing-gmail" | "uploading" | "connecting" | null;
@@ -69,6 +70,7 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
   const [status, setStatus] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [previewSource, setPreviewSource] = useState<InvoiceSource | null>(null);
+  const [exportSnapshot, setExportSnapshot] = useState<import("../types").SummaryExportSnapshot | null>(null);
   const [uploadPreviewUrls, setUploadPreviewUrls] = useState<Record<string, string>>({});
   const [gmailConnected, setGmailConnected] = useState(initialGmailConnected);
   const [expensePresets, setExpensePresets] = useState(initialExpensePresets);
@@ -77,6 +79,7 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
   const [presetsError, setPresetsError] = useState(initialPresetsError);
   const [presetsRefreshing, setPresetsRefreshing] = useState(false);
   const uploadUrlsRef = useRef(new Set<string>());
+  const exportButtonRef = useRef<HTMLButtonElement>(null);
   const runId = useRef(0);
   const deletedKeys = useRef(new Set<string>());
   const reportStartPending = useRef(false);
@@ -88,8 +91,20 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
   }, []);
 
   const summary = summarizeInvoices(invoices, 0, additionalItems);
-  const reportIsComplete = reportCreated && summary.isComplete && summary.invoiceCount > 0 && warnings.length === 0 && !phase;
   const displayTotalLabel = "Összesen";
+
+  const openExport = () => {
+    const current = getValues();
+    const currentSummary = summarizeInvoices(current.invoices, 0, current.additionalItems);
+    setExportSnapshot(createSummaryExportSnapshot(
+      current.reportMonth,
+      current.invoices,
+      current.additionalItems,
+      currentSummary.formattedTotal,
+      `${Math.round(currentSummary.knownHalfShares.firstMinor / 100).toLocaleString("hu-HU")} Ft`,
+      currentSummary.totalOverflow,
+    ));
+  };
 
   const showSource = (source: InvoiceSource) => setPreviewSource(source);
 
@@ -420,12 +435,7 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
 
         <aside className="h-fit rounded-[20px] border border-border bg-card p-5 shadow-[0_8px_24px_rgba(91,61,36,0.06)] sm:p-6 lg:sticky lg:top-5" aria-labelledby="summary-heading">
           <h2 id="summary-heading" className="font-serif text-[26px] font-semibold leading-tight text-foreground">{reportCreated ? "Összegzés" : "Nincs aktív kimutatás"}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {formatMonth(reportMonth)}
-            {(!reportCreated || (summary.incompleteCount === 0 && summary.additionalIncompleteCount === 0 && warnings.length === 0)) && (
-              <> · {reportCreated ? summary.additionalCount > 0 ? "számla nélküli tételekkel" : reportIsComplete ? "minden számla átnézve" : "várja a számlákat" : "indítsd el, ha szeretnéd összegyűjteni a számlákat"}</>
-            )}
-          </p>
+
           {summary.totalOverflow && <p role="alert" className="mt-3 rounded-xl bg-note-peach p-3 text-sm">Az összegek meghaladják a biztonságos számolási korlátot. Az összesítésből kimaradtak tételek; ellenőrizd a megadott összegeket.</p>}
           {!reportCreated ? (
             <p className="mt-5 rounded-xl bg-background p-4 text-sm leading-6 text-muted-foreground">Az alapértelmezett közös tételek az új kimutatás indításakor kerülnek be.</p>
@@ -483,11 +493,21 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
                   <span className="font-semibold tabular-nums">{Math.round(summary.knownHalfShares.firstMinor / 100).toLocaleString("hu-HU")} Ft</span>
                 </div>
               </div>
+              <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                <button type="button" disabled title="A mentés jövőbeli funkcióként csak a számlákat tárolja." className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-border bg-background px-4 text-sm font-medium text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-60">Mentés</button>
+                <button ref={exportButtonRef} type="button" onClick={openExport} disabled={Boolean(phase)} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-wait disabled:opacity-60">Exportálás…</button>
+              </div>
             </>
           )}
         </aside>
 
-      {previewSource && <SourcePreviewDialog key={previewSource.kind === "upload" ? previewSource.documentId : `${previewSource.messageId}-${previewSource.attachmentId ?? previewSource.linkIndex}`} source={previewSource} uploadPreviewUrls={uploadPreviewUrls} onClose={() => setPreviewSource(null)} />}
+        {exportSnapshot && <ExpenseSummaryExportDialog snapshot={exportSnapshot} open={Boolean(exportSnapshot)} onOpenChange={(open) => {
+          if (!open) {
+            setExportSnapshot(null);
+            requestAnimationFrame(() => exportButtonRef.current?.focus());
+          }
+        }} />}
+        {previewSource && <SourcePreviewDialog key={previewSource.kind === "upload" ? previewSource.documentId : `${previewSource.messageId}-${previewSource.attachmentId ?? previewSource.linkIndex}`} source={previewSource} uploadPreviewUrls={uploadPreviewUrls} onClose={() => setPreviewSource(null)} />}
       </form>
     </FormProvider>
   );
