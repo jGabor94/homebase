@@ -39,6 +39,7 @@ const aiInvoice = (amount: string, amountQuote: string): AiInvoiceList["invoices
   dueDate: evidenceField("2026-03-20", "Fizetési határidő: 2026. 03. 20."),
   billingPeriod: evidenceField("2026. március", "Elszámolási időszak: 2026. március"),
   issuedAt: evidenceField(null, null),
+  consumption: evidenceField(null, null),
   documentType: { value: "invoice", evidence: { page: 1, quote: "Számla" } },
   relatedInvoiceNumber: evidenceField(null, null),
 });

@@ -2,6 +2,7 @@ import type { AiInvoiceList } from "../types";
 import { parseHungarianInvoiceDate } from "./dates";
 import { parseHungarianAmountToMinor } from "./money";
 import { readStackedPaymentFields, readStackedIssueDate } from "./invoice-layout";
+import { parseExplicitConsumption } from "./consumption";
 
 export const normalizeEvidenceText = (value: string) =>
   value.normalize("NFKC").toLocaleLowerCase("hu-HU").replace(/\s+/gu, " ").trim();
@@ -107,6 +108,11 @@ const fieldIsVerified = (field: keyof AiInvoiceList["invoices"][number], raw: un
     && containsComparableValue(value, quote);
   if (field === "relatedInvoiceNumber") return /eredetiszamla|kapcsolodoszamla|hivatkozottszamla/u.test(normalizedQuote)
     && containsComparableValue(value, quote);
+  if (field === "consumption") {
+    const extracted = parseExplicitConsumption(quote);
+    const stated = parseExplicitConsumption(`Fogyasztás: ${value}`);
+    return extracted !== null && stated !== null && extracted.quantity === stated.quantity && extracted.unit === stated.unit;
+  }
   if (field === "documentType") return documentTypeIsProven(value, quote);
   return false;
 };

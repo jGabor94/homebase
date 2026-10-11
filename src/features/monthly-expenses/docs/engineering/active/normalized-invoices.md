@@ -10,6 +10,8 @@ Minden számlasor primitív üzleti adata külön oszlop: azonosító, szolgált
 
 A `position` oszlop megőrzi a számlák felületi sorrendjét. A sorazonosító egy kimutatáson belül egyedi, `(report_id, id)` összetett elsődleges kulccsal. A kimutatás törlése a hozzá tartozó számlákat is törli. RLS és a meglévő DAL jogosultságvédelem mindkét táblára érvényes. Drizzle-reláció deklarálja az egy-a-többhöz kapcsolatot.
 
+A fizikai fogyasztás opcionális `consumption_quantity` és `consumption_unit` oszlopban tárolódik; régi számláknál null. A részletes szabályokat a [közműdiagram leírása](utility-consumption-history.md) tartalmazza.
+
 ## Mentés és olvasás
 
 A felület és a Server Action bemenete változatlan: teljes szerkeszthető snapshot. Egy tranzakció ellenőrzi/frissíti a szülő verzióját, menti a hozzáadott tételeket, és lecseréli kizárólag az adott kimutatás számlasorait. Ütközés vagy számlahiba minden módosítást visszagörget. A visszatöltés rekonstruálja a korábbi snapshotot a szülőből és a rendezett számlasorokból. A lista ugyanazzal az összegzési helperrel számol, mint a felület.

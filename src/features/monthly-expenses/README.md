@@ -9,6 +9,7 @@ Frissítve: **2026-10-11**. Az aktuális működést ez a README és az aktív m
 Az implementáció a `/app/monthly-expenses` oldalon érhető el. Az `/app` közös shadcn sidebarjának „Közművek” menüpontja ide vezet; a dashboard adatai továbbra is fiktívek. A hónap teljes szerkeszthető állapota menthető, a mentett hónapok a listából később megnyithatók. A számlák a `invoices` táblában, típusos oszlopokban tárolódnak; a számla nélküli, egyedi vagy sablonból másolt tételek a havi kimutatás `additional_items` JSONB mezőjében maradnak. PDF-fájlt és feltöltési blobot nem tárolunk; a korábban feltöltött számla előnézete újranyitás után nem érhető el. A saját Gmailből három eredeti októberi PDF letöltése, beolvasása, összevonása és ismételt importja élő próbában sikeres volt.
 
 - [Mérnöki terv](docs/engineering/active/invoice-import.md): működés, adatfolyam, invariánsok, hibakezelés és elfogadási feltételek.
+- [Fogyasztási és költségdiagram](docs/engineering/active/utility-consumption-history.md): közműváltó, fogyasztás/költség nézet, fizikai mennyiségek és egységek, hiányzó adatok kezelése.
 - [Havi kimutatások mentése](docs/engineering/active/monthly-report-storage.md): teljes szerkeszthető pillanatkép, hozzáférés, ütközés- és verziókezelés.
 - [Relációs számlatárolás](docs/engineering/active/normalized-invoices.md): oszlopmodell, snapshot mapping, tranzakciók és adatátállítási sorrend.
 - [Kimutatáslista és törlés](docs/implementation/archive/report-list-management.md): részletnézet, indítási feltétel, törlés és commit előtti ellenőrzések.
@@ -18,6 +19,8 @@ Az implementáció a `/app/monthly-expenses` oldalon érhető el. Az `/app` köz
 - [Összegzés exportjának implementációja](docs/implementation/archive/summary-export.md): befejezett export, levélküldés és ellenőrzési eredmények.
 
 ## Első fejlesztési kör
+
+- Váltható fogyasztási és költségdiagram a Közművek nyitóoldalán, a legutóbbi 12 mentett hónap adataiból. A számlákhoz opcionálisan fizikai fogyasztás és mértékegység rögzíthető; az eltérő egységek külön jelennek meg.
 
 - Kimutatások listája a legújabb hónap finom kiemelésével; új kimutatás csak az aktuális hónapra indítható, ha még nincs hozzá mentés.
 - Egy saját Gmail-fiók számláinak beolvasása gombnyomásra.
@@ -35,7 +38,7 @@ Az általános fejlesztési szabályokat a [feature-konvenciók](../AGENTS.md), 
 
 ### Aktuális felület és adatkinyerés
 
-A kezdőnézetben kizárólag a mentett kimutatások listája jelenik meg; a legújabb hónap visszafogott kiemelést kap. Egyetlen **Új kimutatás · [aktuális hónap]** gomb indítja a Budapest szerinti aktuális hónapot, ha a listában még nincs hozzá mentés. Nincs hónapválasztó vagy nagy indítókártya. A számlák és a jobb oldali összegzés csak indítás vagy megnyitás után, a részletnézetben láthatók. A **Kimutatások** gomb visszavisz a listára, a nem mentett módosítások eldobása előtt megerősítéssel. A mentési gomb felirata mindig **Mentés**.
+A kezdőnézet tetején egyetlen, közművenként váltható fogyasztási és költségdiagram jelenik meg, alatta a mentett kimutatások listája; a legújabb hónap visszafogott kiemelést kap. Egyetlen **Új kimutatás · [aktuális hónap]** gomb indítja a Budapest szerinti aktuális hónapot, ha a listában még nincs hozzá mentés. Nincs hónapválasztó vagy nagy indítókártya. A számlák és a jobb oldali összegzés csak indítás vagy megnyitás után, a részletnézetben láthatók. A **Kimutatások** gomb visszavisz a listára, a nem mentett módosítások eldobása előtt megerősítéssel. A mentési gomb felirata mindig **Mentés**.
 
 A listában külön törlésgomb tartozik minden kimutatáshoz. Megerősítés után a hónap és az ismert verzió alapján védett Server Action törli a szülőt, a kapcsolódó számlasorokat és a hozzáadott tételeket. Másutt módosított vagy már törölt kimutatásnál hiba jelenik meg, nem történik vak törlés. A közös tételsablonok megmaradnak; az aktuális hónap törlése után újra látszik az indítógomb.
 
@@ -85,6 +88,8 @@ A széles Gmail-keresés után szolgáltatótól független, bővíthető magyar
 A gyűjtés `complete` jelzője kizárólag a technikai teljességet jelenti: minden keresési oldal és találati levél olvasható volt-e, illetve elértünk-e egy korlátot. A hiányzó PDF vagy bizonytalan kiküldési dátum külön figyelmeztetés; önmagában nem eredményez „Gmail-keresés részleges” üzenetet.
 
 ## Korlátok és ellenőrzés
+
+A fogyasztási és költségdiagram 2026-10-11-i bővítésénél a teljes tesztcsomag **77/77** sikeres tesztet adott; a későbbi ALFÖLDVÍZ-javítás **16/16** célzott tesztje is sikeres. Az eredeti vízszámla teljes PDF-parseres ellenőrzése 8 m³-t adott a 3. oldal forrásbizonyítékával, a szennyvíz mennyiségének ismételt hozzáadása nélkül. Commit előtt a teljes lint és típusellenőrzés sikeres volt. Részletek: [befejezett implementáció](docs/implementation/archive/utility-consumption-history.md).
 
 - PDF-enként legfeljebb **3 MiB / 30 oldal**; a fájl tartalmát a szerver is ellenőrzi.
 - Gmailből MVM gáz/villany, ALFÖLDVÍZ és MOHU; kézi feltöltéssel más szolgáltató is felvihető.

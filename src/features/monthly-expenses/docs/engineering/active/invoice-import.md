@@ -10,7 +10,7 @@ Az űrlap helyi állapota újratöltéskor elvész, ha a kimutatást nem mentett
 
 ## Felhasználói folyamat és mezők
 
-1. A kezdőnézetben a mentett kimutatások listája és feltételesen az aktuális havi indítógomb jelenik meg. Megnyitás után külön részletnézet mutatja a számlákat és az összegzést; visszalépéskor a nem mentett módosítások eldobása megerősítést kér.
+1. A kezdőnézetben egy váltható fogyasztási és költségdiagram, alatta a mentett kimutatások listája és feltételesen az aktuális havi indítógomb jelenik meg. Megnyitás után külön részletnézet mutatja a számlákat és az összegzést; visszalépéskor a nem mentett módosítások eldobása megerősítést kér.
 2. Három egységes művelet: Gmail-beolvasás/összekapcsolás, PDF-feltöltés, kézi számlafelvitel. Mobilon egy oszlopban.
 3. Számlakártyák egy listában, kategóriacímek és üres kategória-helyőrzők nélkül. A kategória megmarad az adatokban, egy szolgáltatáshoz több sor is tartozhat.
 4. Az **Összegzés** oldalsáv a számlák szolgáltatástípusát, szolgáltatóját és összegét, majd a havi tételeket, az **Összesen** és egyetlen **Fele** sort mutatja. Nincs beépített hitel vagy külön számla-részösszeg. A „Fele” kijelzés egész forintra kerekít; a belső számítás fillérpontos.

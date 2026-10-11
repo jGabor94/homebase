@@ -19,7 +19,11 @@ export const INVOICE_FIELDS = [
   "dueDate",
   "billingPeriod",
   "issuedAt",
+  "consumptionQuantity",
+  "consumptionUnit",
 ] as const;
+
+export const CONSUMPTION_UNITS = ["m3", "kWh", "MJ", "kg", "l", "piece"] as const;
 
 export const INVOICE_ISSUES = [
   "missing-provider",

@@ -22,6 +22,7 @@ For column layouts include the full label-and-value block; never join separated 
 For amounts include the payable label, value and currency. For dates and periods include their field labels.
 dueDate is the payment deadline; issuedAt is the invoice issue date. They are different from delivery/performance dates.
 billingPeriod preserves the printed billing/consumption period text, not a replacement performance date.
+consumption is the explicitly labelled physical consumption quantity and unit (for example, "123,4 m³" or "500 kWh"). Only use a clear consumption/felhasznált mennyiség label, never infer it from meter readings, price, totals, or unrelated line items. If there are multiple possible consumption rows or the unit is unclear, return null value and null evidence.
 invoiceNumber is the printed invoice number, preserving leading zeros, not account/customer/contract numbers.
 category: gas, electricity, water, waste or other; use the service described by the actual issuer/document.
 documentType: invoice, credit, correction or cancellation. Preserve negative credits and reference the original invoice when printed.

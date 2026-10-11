@@ -1,5 +1,5 @@
 import z from "zod";
-import { DOCUMENT_TYPES, INVOICE_CATEGORIES, INVOICE_FIELDS, INVOICE_ISSUES } from "../config";
+import { CONSUMPTION_UNITS, DOCUMENT_TYPES, INVOICE_CATEGORIES, INVOICE_FIELDS, INVOICE_ISSUES } from "../config";
 
 const isCalendarDate = (value: string) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -30,6 +30,8 @@ const fieldEvidenceSchema = z.object({
   dueDate: evidenceSchema.optional(),
   billingPeriod: evidenceSchema.optional(),
   issuedAt: evidenceSchema.optional(),
+  consumptionQuantity: evidenceSchema.optional(),
+  consumptionUnit: evidenceSchema.optional(),
 });
 
 const sourceSchema = z.discriminatedUnion("kind", [
@@ -76,6 +78,8 @@ export const invoiceRowSchema = z.object({
   dueDate: optionalDateSchema,
   billingPeriod: z.string().trim().max(160, { message: "Az időszak legfeljebb 160 karakter lehet." }),
   issuedAt: optionalDateSchema,
+  consumptionQuantity: z.number().finite({ message: "Adj meg véges fogyasztási mennyiséget." }).min(0, { message: "A fogyasztás nem lehet negatív." }).max(1_000_000_000_000, { message: "A fogyasztási mennyiség túl nagy." }).nullable().default(null),
+  consumptionUnit: z.enum(CONSUMPTION_UNITS).nullable().default(null),
   sentAt: z.string().datetime().nullable(),
   reportMonth: reportMonthSchema,
   documentType: z.enum(DOCUMENT_TYPES).nullable(),
@@ -91,6 +95,8 @@ export const invoiceRowSchema = z.object({
     dueDate: z.enum(["code", "ai", "manual"]),
     billingPeriod: z.enum(["code", "ai", "manual"]),
     issuedAt: z.enum(["code", "ai", "manual"]),
+    consumptionQuantity: z.enum(["code", "ai", "manual"]).optional(),
+    consumptionUnit: z.enum(["code", "ai", "manual"]).optional(),
   }),
   manuallyEditedFields: z.array(z.enum(INVOICE_FIELDS)),
   issues: z.array(z.enum(INVOICE_ISSUES)),
@@ -210,6 +216,7 @@ export const aiInvoiceSchema = z.object({
   dueDate: extractedInvoiceFieldSchema,
   billingPeriod: extractedInvoiceFieldSchema,
   issuedAt: extractedInvoiceFieldSchema,
+  consumption: extractedInvoiceFieldSchema.default({ value: null, evidence: null }),
   documentType: z.object({
     value: z.enum(DOCUMENT_TYPES).nullable(),
     evidence: evidenceSchema.nullable(),
@@ -243,4 +250,16 @@ export const gmailCollectionResultSchema = z.object({
 export const invoiceImportResultSchema = z.object({
   invoices: z.array(invoiceRowSchema),
   warnings: z.array(z.string()),
+});
+
+export const utilityHistoryMonthSchema = z.object({
+  reportMonth: reportMonthSchema,
+  series: z.array(z.object({
+    category: z.enum(INVOICE_CATEGORIES),
+    unit: z.enum(CONSUMPTION_UNITS).nullable(),
+    consumption: z.number().finite().nullable(),
+    costMinor: z.number().int().nullable(),
+    missingConsumptionCount: z.number().int().min(0),
+    excludedCostCount: z.number().int().min(0),
+  })),
 });

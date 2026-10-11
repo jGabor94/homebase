@@ -66,7 +66,8 @@ test("electricity cover pages are not misclassified by gas references in energy 
 test("water invoice column headers associate the payable amount and deadline with their following values", async () => {
   const text = "Számla\nIvóvíz\nElszámolt időszak: 2026.09.01-2026.09.30\nFizetendő összeg:\nFizetési határidő:\n5 056 Ft\n2026.10.22\nSzolgáltató neve:\nCíme:\nAdószáma:\nBankszámlaszáma:\nALFÖLDVÍZ Zrt.\nSzámla sorszáma: TEST-WATER";
   const dates = "Teljesítés időpontja:\nSzámla kelte:\nA szolgáltatás megnevezése:\n2026.10.22\n2026.10.02\nVíziközmű-szolgáltatás";
-  const details = `Számla sorszáma:\nFizetési mód:\nTEST-WATER\nÁtutalás\n${dates}`;
+  const waterSummary = "Elszámolt mennyiség:\nElszámolt mennyiség:\nSZÁMLARÉSZLETEZŐ\nIvóvíz 7,5 m3\nSzennyvíz 7,5 m3";
+  const details = `Számla sorszáma:\nFizetési mód:\nTEST-WATER\nÁtutalás\n${dates}\n${waterSummary}`;
   const result = await extractInvoiceRowsFromPdf({ ...makeDocument(text), totalPages: 2,
     pages: [{ page: 1, text }, { page: 2, text: details }], text: `${text}\n${details}`,
   }, new Uint8Array(), context);
@@ -81,6 +82,10 @@ test("water invoice column headers associate the payable amount and deadline wit
   assert.deepEqual(row.sources[0].pages, [1, 2]);
   assert.equal(row.fieldEvidence.issuedAt?.quote, dates.split("\n").slice(0, 5).join("\n"));
   assert.equal(row.billingPeriod, "2026.09.01-2026.09.30");
+  assert.equal(row.consumptionQuantity, 7.5);
+  assert.equal(row.consumptionUnit, "m3");
+  assert.equal(row.fieldEvidence.consumptionQuantity?.page, 2);
+  assert.equal(row.fieldEvidence.consumptionQuantity?.quote, waterSummary.split("\n").slice(0, 4).join("\n"));
   assert.deepEqual(row.issues, []);
   assert.deepEqual(result.warnings, []);
 });

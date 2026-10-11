@@ -1,5 +1,5 @@
 import { createdAt, updatedAt } from "@/drizzle/schemaTypes";
-import { check, bigint, boolean, date, foreignKey, integer, jsonb, pgTable, primaryKey, text, unique, varchar } from "drizzle-orm/pg-core";
+import { check, bigint, boolean, date, doublePrecision, foreignKey, integer, jsonb, pgTable, primaryKey, text, unique, varchar } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { invoiceReportFormSchema, invoiceRowSchema } from "../zod/schema";
 
@@ -40,6 +40,8 @@ export const invoicesTable = pgTable.withRLS("invoices", {
   dueDate: date("due_date", { mode: "string" }),
   billingPeriod: varchar("billing_period", { length: 160 }).notNull(),
   issuedAt: date("issued_at", { mode: "string" }),
+  consumptionQuantity: doublePrecision("consumption_quantity"),
+  consumptionUnit: varchar("consumption_unit", { length: 10 }).$type<typeof invoiceRowSchema._output.consumptionUnit>(),
   // Preserve the original ISO timestamp and its offset across a JSON round trip.
   sentAt: text("sent_at"),
   reportMonth: varchar("report_month", { length: 7 }).notNull(),
@@ -60,4 +62,6 @@ export const invoicesTable = pgTable.withRLS("invoices", {
   unique("invoices_report_position_key").on(table.reportId, table.position),
   check("invoices_position_check", sql`${table.position} >= 0`),
   check("invoices_amount_minor_check", sql`${table.amountMinor} is null or ${table.amountMinor} between -9000000000000 and 9000000000000`),
+  check("invoices_consumption_quantity_check", sql`${table.consumptionQuantity} is null or (${table.consumptionQuantity} >= 0 and ${table.consumptionQuantity} <= 1000000000000)`),
+  check("invoices_consumption_unit_check", sql`${table.consumptionUnit} is null or ${table.consumptionUnit} in ('m3', 'kWh', 'MJ', 'kg', 'l', 'piece')`),
 ]);

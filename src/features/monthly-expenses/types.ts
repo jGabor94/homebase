@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { CONSUMPTION_UNITS } from "./config";
 import { expensePresetsTable, invoicesTable, monthlyExpenseReportsTable } from "./drizzle/schema";
 import {
   aiInvoiceListSchema,
@@ -21,6 +22,7 @@ import {
 } from "./zod/schema";
 
 export type InvoiceRowInput = z.infer<typeof invoiceRowSchema>;
+export type ConsumptionUnit = typeof CONSUMPTION_UNITS[number];
 export type AdditionalItemInput = z.infer<typeof additionalItemSchema>;
 export type InsertExpensePreset = typeof expensePresetsTable.$inferInsert;
 export type SelectExpensePreset = typeof expensePresetsTable.$inferSelect;
@@ -77,3 +79,4 @@ export type InvoiceField = InvoiceRowInput["manuallyEditedFields"][number];
 export type InvoiceIssue = InvoiceRowInput["issues"][number];
 export type InvoiceSource = InvoiceRowInput["sources"][number];
 export type StoredGmailConnection = Awaited<ReturnType<typeof import("./drizzle/operations").getStoredGmailConnection>>;
+export type UtilityHistoryMonth = Awaited<ReturnType<typeof import("./utils/consumption").buildUtilityHistoryMonth>>;

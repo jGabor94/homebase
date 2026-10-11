@@ -1,10 +1,10 @@
 import "server-only";
 import { Dal } from "@/lib/dal";
 import { createErrorReturn, createSuccessReturn } from "@/lib/dal/types";
-import { getExpensePresets as getExpensePresetsQuery, getMonthlyExpenseReport as getMonthlyExpenseReportQuery, getMonthlyExpenseReports as getMonthlyExpenseReportsQuery, getStoredGmailConnection } from "../drizzle/operations";
+import { getExpensePresets as getExpensePresetsQuery, getMonthlyExpenseReport as getMonthlyExpenseReportQuery, getMonthlyExpenseReports as getMonthlyExpenseReportsQuery, getStoredGmailConnection, getUtilityHistory as getUtilityHistoryQuery } from "../drizzle/operations";
 import { hasStoredGmailConnection } from "../utils/gmail-connection";
-import { expensePresetDtoSchema, monthlyExpenseReportListItemSchema, monthlyExpenseReportLoadedSchema } from "../zod/schema";
-import type { ExpensePresetActionResult, ExpensePresetDto, MonthlyExpenseReportItem, MonthlyExpenseReportLoaded } from "../types";
+import { expensePresetDtoSchema, monthlyExpenseReportListItemSchema, monthlyExpenseReportLoadedSchema, utilityHistoryMonthSchema } from "../zod/schema";
+import type { ExpensePresetActionResult, ExpensePresetDto, MonthlyExpenseReportItem, MonthlyExpenseReportLoaded, UtilityHistoryMonth } from "../types";
 import { z } from "zod";
 
 export const getGmailConnectionStatus = Dal.create({ cache: false }).authenticate()
@@ -96,4 +96,27 @@ export const getMonthlyExpenseReport = async (reportMonth: string): Promise<Expe
     }
   } catch { /* Return the public storage error below. */ }
   return { success: false, error: { type: "report-storage-error", message: "A kimutatás most nem tölthető be." } };
+};
+
+const utilityHistoryDal = Dal.create({ cache: false })
+  .schema({ output: z.array(utilityHistoryMonthSchema) })
+  .authenticate()
+  .authorize({ resource: "monthlyExpenses", action: "read" })
+  .operation(async () => {
+    try {
+      return createSuccessReturn(await getUtilityHistoryQuery());
+    } catch {
+      return createErrorReturn({ type: "report-storage-error", message: "A fogyasztási előzmények most nem tölthetők be." });
+    }
+  });
+
+export const getUtilityHistory = async (): Promise<ExpensePresetActionResult<UtilityHistoryMonth[]>> => {
+  try {
+    const result = await utilityHistoryDal();
+    if (result?.success) return { success: true, data: result.data };
+    if (result && !result.success && (result.error.type === "unauthenticated" || result.error.type === "unauthorized")) {
+      return { success: false, error: { type: result.error.type, message: result.error.type === "unauthenticated" ? "Jelentkezz be a fogyasztási előzmények megtekintéséhez." : "Ehhez a funkcióhoz nincs hozzáférésed." } };
+    }
+  } catch { /* Return the public storage error below. */ }
+  return { success: false, error: { type: "report-storage-error", message: "A fogyasztási előzmények most nem tölthetők be." } };
 };

@@ -4,9 +4,10 @@ import { useEffect, useRef, useState, type FC } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { Check, ChevronDown, FileText, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { INVOICE_CATEGORIES, INVOICE_CATEGORY_LABELS, INVOICE_ISSUE_LABELS } from "../config";
+import { CONSUMPTION_UNITS, INVOICE_CATEGORIES, INVOICE_CATEGORY_LABELS, INVOICE_ISSUE_LABELS } from "../config";
 import type { InvoiceField, InvoiceReportInput, InvoiceRowInput } from "../types";
 import { formatMinorAsHuf, parseHungarianAmountToMinor } from "../utils/money";
+import { parseConsumptionQuantityInput } from "../utils/consumption";
 
 interface InvoiceRowCardProps {
   index: number;
@@ -34,6 +35,8 @@ const evidenceFieldLabels: Record<string, string> = {
   dueDate: "Fizetési határidő",
   billingPeriod: "Számlázási időszak",
   issuedAt: "Számla kelte",
+  consumptionQuantity: "Fogyasztási mennyiség",
+  consumptionUnit: "Fogyasztási egység",
 };
 
 const formatConflictValue = (field: string, value: string | null) => {
@@ -52,6 +55,10 @@ const InvoiceRowCard: FC<InvoiceRowCardProps> = ({ index, onRemove, onPreview })
   const [amountText, setAmountText] = useState(formatMinorAsHuf(amount));
   const [amountInvalid, setAmountInvalid] = useState(false);
   const lastSyncedAmount = useRef(amount);
+  const consumptionQuantity = useWatch({ control, name: `invoices.${index}.consumptionQuantity` });
+  const [consumptionText, setConsumptionText] = useState(consumptionQuantity === null ? "" : String(consumptionQuantity).replace(".", ","));
+  const [consumptionInvalid, setConsumptionInvalid] = useState(false);
+  const lastSyncedConsumption = useRef(consumptionQuantity);
 
   useEffect(() => {
     if (amount !== lastSyncedAmount.current) {
@@ -59,6 +66,14 @@ const InvoiceRowCard: FC<InvoiceRowCardProps> = ({ index, onRemove, onPreview })
       setAmountText(formatMinorAsHuf(amount));
     }
   }, [amount]);
+
+  useEffect(() => {
+    if (!Object.is(consumptionQuantity, lastSyncedConsumption.current)) {
+      lastSyncedConsumption.current = consumptionQuantity;
+      setConsumptionText(consumptionQuantity === null ? "" : String(consumptionQuantity).replace(".", ","));
+      setConsumptionInvalid(false);
+    }
+  }, [consumptionQuantity]);
 
   if (!invoice) return null;
 
@@ -254,6 +269,47 @@ const InvoiceRowCard: FC<InvoiceRowCardProps> = ({ index, onRemove, onPreview })
           Számlázási időszak
           <input {...register(`invoices.${index}.billingPeriod`, { onChange: () => markEdited("billingPeriod") })} maxLength={160} placeholder="Például: 2026. augusztus" aria-invalid={Boolean(fieldError?.billingPeriod)} className={fieldClass} />
           {fieldError?.billingPeriod?.message && <span role="alert" className="mt-1 block text-xs text-primary">{fieldError.billingPeriod.message}</span>}
+        </label>
+        <label className={labelClass}>
+          Fogyasztás
+          <input
+            inputMode="decimal"
+            value={consumptionText}
+            onChange={(event) => {
+              const value = event.target.value;
+              setConsumptionText(value);
+              const parsed = parseConsumptionQuantityInput(value);
+              if (value.trim() === "") {
+                setConsumptionInvalid(false);
+                lastSyncedConsumption.current = null;
+                setValue(`invoices.${index}.consumptionQuantity`, null, { shouldDirty: true, shouldValidate: true });
+              } else if (parsed !== null) {
+                setConsumptionInvalid(false);
+                lastSyncedConsumption.current = parsed;
+                setValue(`invoices.${index}.consumptionQuantity`, parsed, { shouldDirty: true, shouldValidate: true });
+              } else {
+                setConsumptionInvalid(true);
+                // Keep invalid input invalid in the form so saving cannot silently turn it into missing data.
+                lastSyncedConsumption.current = Number.NaN;
+                setValue(`invoices.${index}.consumptionQuantity`, Number.NaN, { shouldDirty: true, shouldValidate: true });
+              }
+              markEdited("consumptionQuantity");
+            }}
+            aria-invalid={consumptionInvalid || Boolean(fieldError?.consumptionQuantity)}
+            aria-describedby={`consumption-help-${invoice.id}`}
+            className={fieldClass}
+          />
+          <span id={`consumption-help-${invoice.id}`} className="mt-1 block text-xs font-normal text-muted-foreground">Például: 123,45</span>
+          {(consumptionInvalid || fieldError?.consumptionQuantity?.message) && <span role="alert" className="mt-1 block text-xs text-primary">Adj meg nullánál nem kisebb, legfeljebb 1 000 000 000 000 értéket.</span>}
+        </label>
+        <label className={labelClass}>
+          Fogyasztási egység
+          <Controller control={control} name={`invoices.${index}.consumptionUnit`} render={({ field }) => (
+            <select {...field} value={field.value ?? ""} onChange={(event) => { field.onChange(event.target.value || null); markEdited("consumptionUnit"); }} className={fieldClass}>
+              <option value="">Nincs megadva</option>
+              {CONSUMPTION_UNITS.map((unit) => <option key={unit} value={unit}>{unit === "m3" ? "m³" : unit === "piece" ? "db" : unit}</option>)}
+            </select>
+          )} />
         </label>
         <label className={labelClass}>
           Számla kelte

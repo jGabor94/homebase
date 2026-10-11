@@ -1,6 +1,9 @@
 import { INVOICE_FIELDS } from "../config";
 import type { AdditionalItemInput, InvoiceField, InvoiceIssue, InvoiceRowInput, InvoiceSource } from "../types";
 import { formatMinorAsHuf, splitMinorAmount } from "./money";
+import { isInvoiceCostEligible } from "./eligibility";
+export { isInvoiceCostEligible, isUtilityConsumptionEligible } from "./eligibility";
+export { buildUtilityHistoryMonth, parseConsumptionQuantityInput, parseExplicitConsumption } from "./consumption";
 
 const unique = <T,>(items: T[]) => [...new Set(items)];
 
@@ -14,6 +17,8 @@ export const createEmptyInvoice = (reportMonth: string, category: InvoiceRowInpu
   dueDate: null,
   billingPeriod: "",
   issuedAt: null,
+  consumptionQuantity: null,
+  consumptionUnit: null,
   sentAt: null,
   reportMonth,
   documentType: "invoice",
@@ -235,25 +240,7 @@ export const markInvoiceFieldEdited = (invoice: InvoiceRowInput, field: InvoiceF
   reviewStatus: "needs-review" as const,
 });
 
-const fieldsForTotal = (invoices: InvoiceRowInput[]) => {
-  const referenceKey = (invoice: InvoiceRowInput, number: string) =>
-    `${canonicalProviderName(invoice.providerName)}|${invoice.category}|${number.trim().toLocaleLowerCase("hu-HU")}`;
-  const unresolvedCorrectionNumbers = new Set(invoices
-    .filter((invoice) => invoice.documentType !== "invoice")
-    .flatMap((invoice) => {
-      const reference = invoice.relatedInvoiceNumber ?? invoice.invoiceNumber;
-      return reference ? [referenceKey(invoice, reference)] : [];
-    }));
-
-  return invoices.filter((invoice) => {
-    if (invoice.currency !== "HUF" || invoice.amountMinor === null) return false;
-    if (invoice.amountMinor < 0 || invoice.documentType !== "invoice") return false;
-    if (invoice.issues.some((issue) => ["conflict", "foreign-currency", "possible-duplicate", "correction-unresolved"].includes(issue))) return false;
-    if (invoice.issues.includes("source-unverified") && invoice.fieldOrigin.amountMinor !== "manual") return false;
-    if (invoice.invoiceNumber && unresolvedCorrectionNumbers.has(referenceKey(invoice, invoice.invoiceNumber))) return false;
-    return true;
-  });
-};
+const fieldsForTotal = (invoices: InvoiceRowInput[]) => invoices.filter((invoice) => isInvoiceCostEligible(invoice, invoices));
 
 export const calculateReportSummary = (invoices: InvoiceRowInput[], loanMinor: number, additionalItems: AdditionalItemInput[] = []) => {
   const totaledInvoices = fieldsForTotal(invoices);

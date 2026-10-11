@@ -3,7 +3,7 @@ import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import { accountsTable } from "@/drizzle/schema";
 import { expensePresetsTable, invoicesTable, monthlyExpenseReportsTable } from "./schema";
-import { summarizeInvoices } from "../utils";
+import { buildUtilityHistoryMonth, summarizeInvoices } from "../utils";
 import { fromStoredInvoice } from "../utils/invoice-storage";
 
 const getMonthlyExpenseReportRows = async (reportMonth?: string) => {
@@ -85,6 +85,11 @@ export const getMonthlyExpenseReport = async (reportMonth: string) => {
       additionalItems: report.additionalItems,
     },
   };
+};
+
+export const getUtilityHistory = async () => {
+  const reports = groupMonthlyExpenseReportRows(await getMonthlyExpenseReportRows());
+  return reports.map(({ reportMonth, invoices }) => buildUtilityHistoryMonth(invoices, reportMonth));
 };
 
 export const getStoredGmailConnection = async (userId: string) => {

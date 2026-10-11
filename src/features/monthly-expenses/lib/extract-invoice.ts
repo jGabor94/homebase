@@ -7,6 +7,7 @@ import { parseHungarianInvoiceDate } from "../utils/dates";
 import { parseHungarianAmountToMinor } from "../utils/money";
 import { validateAiEvidence } from "../utils/source-evidence";
 import { readStackedIssuer, readStackedPaymentFields, readStackedIssueDate } from "../utils/invoice-layout";
+import { findExplicitConsumption, parseExplicitConsumption } from "../utils/consumption";
 import type { ParsedPdfDocument, PdfPageText } from "./pdf";
 import { getSafeInvoiceErrorMessage } from "./errors";
 import { extractInvoicesWithAi } from "./ai";
@@ -24,6 +25,8 @@ interface InvoiceDraft {
   dueDate: string | null;
   billingPeriod: string;
   issuedAt: string | null;
+  consumptionQuantity: number | null;
+  consumptionUnit: InvoiceRowInput["consumptionUnit"];
   documentType: InvoiceRowInput["documentType"];
   relatedInvoiceNumber: string | null;
   fieldEvidence: InvoiceRowInput["fieldEvidence"];
@@ -199,6 +202,7 @@ const fromDeterministicSegment = (
   const period = labelMatch(segment.text, ["Számlázási\\s+időszak", "Elszámolási\\s+időszak", "Elszámolt\\s+időszak", "Fogyasztási\\s+időszak"]);
   const issuedAt = readStackedIssueDate(segment.text)
     ?? labelMatch(segment.text, ["Számla\\s+kelt(?:e|ének\\s+dátuma)", "Kiállítás\\s+dátuma"]);
+  const consumption = findExplicitConsumption(segment.text);
   const relatedNumber = labelMatch(segment.text, ["Eredeti\\s+számlaszám", "Kapcsolódó\\s+számla(?:szám)?", "Hivatkozott\\s+számlaszám"]);
   const amountCurrency = amountField ? detectCurrency(amountField.value) : null;
   const amountMinor = amountField && amountCurrency
@@ -232,6 +236,7 @@ const fromDeterministicSegment = (
     ...(dueDate ? { dueDate: makeEvidence(document.pages, absoluteIndex(dueDate), dueDate.quote) } : {}),
     ...(period ? { billingPeriod: makeEvidence(document.pages, absoluteIndex(period), period.quote) } : {}),
     ...(issuedAt ? { issuedAt: makeEvidence(document.pages, absoluteIndex(issuedAt), issuedAt.quote) } : {}),
+    ...(consumption ? { consumptionQuantity: makeEvidence(document.pages, absoluteIndex(consumption), consumption.quote), consumptionUnit: makeEvidence(document.pages, absoluteIndex(consumption), consumption.quote) } : {}),
   };
   const fieldOrigin = Object.fromEntries(INVOICE_FIELDS.map((field) => [field, "code"])) as InvoiceRowInput["fieldOrigin"];
   const issues: InvoiceIssue[] = [];
@@ -258,6 +263,8 @@ const fromDeterministicSegment = (
     dueDate: dueDateIso,
     billingPeriod: period?.value ?? "",
     issuedAt: issuedAtIso,
+    consumptionQuantity: consumption?.quantity ?? null,
+    consumptionUnit: consumption?.unit ?? null,
     documentType,
     relatedInvoiceNumber: relatedNumber?.value ?? null,
     fieldEvidence,
@@ -297,6 +304,19 @@ const aiDraftFromInvoice = (
   const issuedAt = issuedAtRaw ? parseHungarianInvoiceDate(issuedAtRaw) : null;
   const documentType = valueOf(ai.documentType.value, ai.documentType.evidence) as InvoiceRowInput["documentType"];
   const relatedInvoiceNumber = valueOf(ai.relatedInvoiceNumber.value, ai.relatedInvoiceNumber.evidence);
+  const consumptionEvidence = ai.consumption.evidence && ai.consumption.evidence.page <= document.totalPages
+    ? ai.consumption.evidence
+    : null;
+  const aiConsumption = ai.consumption.value && consumptionEvidence
+    ? parseExplicitConsumption(consumptionEvidence.quote)
+    : null;
+  const statedConsumption = ai.consumption.value
+    ? parseExplicitConsumption(`Fogyasztás: ${ai.consumption.value}`)
+    : null;
+  const consumption = aiConsumption && statedConsumption
+    && aiConsumption.quantity === statedConsumption.quantity && aiConsumption.unit === statedConsumption.unit
+    ? aiConsumption
+    : null;
   const validEvidence = (field: { evidence: { page: number; quote: string } | null }) => field.evidence && field.evidence.page <= document.totalPages
     ? { page: field.evidence.page, quote: field.evidence.quote }
     : undefined;
@@ -309,6 +329,7 @@ const aiDraftFromInvoice = (
     ...(validEvidence(ai.dueDate) ? { dueDate: validEvidence(ai.dueDate) } : {}),
     ...(validEvidence(ai.billingPeriod) ? { billingPeriod: validEvidence(ai.billingPeriod) } : {}),
     ...(validEvidence(ai.issuedAt) ? { issuedAt: validEvidence(ai.issuedAt) } : {}),
+    ...(consumption && validEvidence(ai.consumption) ? { consumptionQuantity: validEvidence(ai.consumption), consumptionUnit: validEvidence(ai.consumption) } : {}),
   };
   const fieldOrigin = Object.fromEntries(INVOICE_FIELDS.map((field) => [field, "ai"])) as InvoiceRowInput["fieldOrigin"];
   const source: BaseInvoiceSource = context.kind === "upload"
@@ -340,6 +361,8 @@ const aiDraftFromInvoice = (
   return {
     providerName, category, invoiceNumber, amountMinor, currency, dueDate, billingPeriod: period ?? "", issuedAt,
     documentType, relatedInvoiceNumber, fieldEvidence, fieldOrigin, issues,
+    consumptionQuantity: consumption?.quantity ?? null,
+    consumptionUnit: consumption?.unit ?? null,
     pageNumbers: pageNumbers.length ? pageNumbers : [invoiceIndex], reportMonth: context.reportMonth, source,
   };
 };
@@ -356,6 +379,8 @@ const draftToRow = (draft: InvoiceDraft, invoiceIndex: number): InvoiceRowInput 
     dueDate: draft.dueDate,
     billingPeriod: draft.billingPeriod,
     issuedAt: draft.issuedAt,
+    consumptionQuantity: draft.consumptionQuantity,
+    consumptionUnit: draft.consumptionUnit,
     sentAt: draft.source.kind === "gmail" ? draft.source.sentAt : null,
     reportMonth: draft.reportMonth,
     documentType: draft.documentType,

@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, FileUp, LoaderCircle, Mail, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { startTransition, useEffect, useRef, useState, type ChangeEvent, type FC } from "react";
-import { FormProvider, useFieldArray, useForm, useWatch } from "react-hook-form";
+import { FormProvider, useFieldArray, useForm, useWatch, type Resolver } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
 import { INVOICE_CATEGORY_LABELS, MAX_UPLOAD_BYTES } from "../config";
 import { connectGmail } from "../dal/connection";
@@ -21,6 +21,9 @@ import AdditionalExpenseRow from "./AdditionalExpenseRow";
 import ExpenseSummaryExportDialog from "./ExpenseSummaryExportDialog";
 import InvoiceRowCard from "./InvoiceRowCard";
 import SourcePreviewDialog from "./SourcePreviewDialog";
+import UtilityHistoryChart from "./UtilityHistoryChart";
+import { buildUtilityHistoryMonth } from "../utils/consumption";
+import type { UtilityHistoryMonth } from "../types";
 
 type ImportPhase = "searching" | "processing-gmail" | "uploading" | "connecting" | null;
 
@@ -31,6 +34,8 @@ interface MonthlyExpensesFormProps {
   initialPresetsError: string | null;
   initialStoredReports: MonthlyExpenseReportItem[];
   initialStoredReportsError: string | null;
+  initialUtilityHistory: UtilityHistoryMonth[];
+  initialUtilityHistoryError: string | null;
 }
 
 const formatMonth = (monthKey: string) => new Intl.DateTimeFormat("hu-HU", { year: "numeric", month: "long", timeZone: "UTC" })
@@ -57,10 +62,11 @@ const runWithConcurrency = async <T,>(items: T[], concurrency: number, operation
   await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
 };
 
-const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initialGmailConnected, initialExpensePresets, initialPresetsError, initialStoredReports, initialStoredReportsError }) => {
+const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initialGmailConnected, initialExpensePresets, initialPresetsError, initialStoredReports, initialStoredReportsError, initialUtilityHistory, initialUtilityHistoryError }) => {
   const form = useForm<InvoiceReportInput>({
     mode: "all",
-    resolver: zodResolver(invoiceReportFormSchema),
+    // Live rows are normalized; the schema also accepts legacy snapshots without consumption fields.
+    resolver: zodResolver(invoiceReportFormSchema) as Resolver<InvoiceReportInput>,
     defaultValues: { reportMonth: initialMonth, invoices: [], additionalItems: [] },
   });
   const { control, getValues, reset, setValue } = form;
@@ -72,6 +78,7 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
   const [reportCreated, setReportCreated] = useState(false);
   const [reportVersion, setReportVersion] = useState<number | null>(null);
   const [storedReports, setStoredReports] = useState(initialStoredReports);
+  const [utilityHistory, setUtilityHistory] = useState(initialUtilityHistory);
   const [reportSaving, setReportSaving] = useState(false);
   const [reportLoadingMonth, setReportLoadingMonth] = useState<string | null>(null);
   const [reportDeletingMonth, setReportDeletingMonth] = useState<string | null>(null);
@@ -250,6 +257,7 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
         }
         setReportVersion(result.data.version);
         reset(parsed.data);
+        setUtilityHistory((current) => [...current.filter((item) => item.reportMonth !== result.data.reportMonth), buildUtilityHistoryMonth(parsed.data.invoices, result.data.reportMonth)]);
         setStoredReports((current) => {
           const next = current.filter((report) => report.reportMonth !== result.data.reportMonth);
           const summary = summarizeInvoices(parsed.data.invoices, 0, parsed.data.additionalItems);
@@ -321,6 +329,7 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
           return;
         }
         setStoredReports((current) => current.filter((item) => item.reportMonth !== result.data.reportMonth));
+        setUtilityHistory((current) => current.filter((item) => item.reportMonth !== result.data.reportMonth));
         toast.success("A kimutatás törölve.");
       } catch {
         setReportError("A kimutatás most nem törölhető. Próbáld újra.");
@@ -501,6 +510,7 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
         <fieldset disabled={reportSaving || reportLoadingMonth !== null || reportDeletingMonth !== null} className="contents">
           {reportError && <p role="alert" className="col-span-full rounded-xl border border-primary/25 bg-note-peach/60 px-4 py-3 text-sm text-foreground">{reportError}</p>}
           {initialStoredReportsError && <p role="alert" className="col-span-full rounded-xl border border-primary/25 bg-note-peach/60 px-4 py-3 text-sm text-foreground">{initialStoredReportsError}</p>}
+          {!reportCreated && <UtilityHistoryChart history={utilityHistory} error={initialUtilityHistoryError} />}
           {!reportCreated && (
             <section aria-label="Mentett havi kimutatások" className="col-span-full rounded-[20px] border border-border bg-card p-5 shadow-[0_8px_24px_rgba(91,61,36,0.06)] sm:p-6">
               {canCreateReport && (
