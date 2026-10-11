@@ -4,7 +4,7 @@ Frissítve: **2026-10-10**.
 
 ## Cél és adatkezelési határ
 
-Az aktív kimutatás **Összegzés** oldalsávján **Mentés** és **Exportálás…** gomb jelenik meg. A Mentés egyelőre letiltott helyőrző, nincs eseménykezelője vagy adatbázis-művelete. A későbbi mentés kizárólag a tényleges `invoices` számlasorokat tárolja; a számla nélküli `additionalItems`, összesítés és felezés nem része ennek a mentési műveletnek. Új tábla és migráció most nem készül.
+Az aktív kimutatás **Összegzés** oldalsávján **Mentés** és **Exportálás…** gomb jelenik meg. A Mentés a teljes `invoices` és `additionalItems` állapotot tárolja; az összesítés újranyitáskor ezekből számolódik. Az adatmodell, verzióütközés és adatbázis-hozzáférés a [havi kimutatásmentési specifikációban](monthly-report-storage.md) szerepel.
 
 Az export forrása az oldalsó összegzőben látható adatok pillanatképe: a hónap, a számlák szolgáltatástípusa, szolgáltatója és kijelzett összege, az összes számla nélküli tétel neve és összege, az **Összesen** és az egész forintra kerekített **Fele**. A közös tételek, például hitel, akkor szerepelnek, ha az aktuális összegzőben is jelen vannak. Az export nem az eredeti számla-PDF-eket vagy a teljes számlaadatbázis-modellt csomagolja.
 

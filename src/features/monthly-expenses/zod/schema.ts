@@ -12,7 +12,7 @@ const optionalDateSchema = z.string().nullable().refine((value) => value === nul
   message: "Adj meg valós, ÉÉÉÉ-HH-NN formátumú dátumot.",
 });
 
-const reportMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, {
+const reportMonthSchema = z.string().regex(/^(20\d{2}|2100)-(0[1-9]|1[0-2])$/, {
   message: "Válassz valós hónapot.",
 });
 
@@ -114,6 +114,47 @@ export const invoiceReportFormSchema = z.object({
   reportMonth: reportMonthSchema,
   invoices: z.array(invoiceRowSchema).max(100, { message: "Egy kimutatásban legfeljebb 100 számlasor lehet." }),
   additionalItems: z.array(additionalItemSchema).max(100, { message: "Egy kimutatásban legfeljebb 100 számla nélküli tétel lehet." }),
+}).superRefine((report, context) => {
+  const ids = new Set<string>();
+  const addId = (id: string, path: Array<string | number>) => {
+    if (ids.has(id)) context.addIssue({ code: "custom", message: "A kimutatás sorazonosítói nem ismétlődhetnek.", path });
+    ids.add(id);
+  };
+  report.invoices.forEach((invoice, index) => {
+    addId(invoice.id, ["invoices", index, "id"]);
+    if (invoice.reportMonth !== report.reportMonth) context.addIssue({ code: "custom", message: "Minden számlának a kiválasztott hónaphoz kell tartoznia.", path: ["invoices", index, "reportMonth"] });
+    invoice.sources.forEach((source, sourceIndex) => {
+      if (source.reportMonth !== report.reportMonth) context.addIssue({ code: "custom", message: "A számlaforrás hónapja nem egyezik a kimutatáséval.", path: ["invoices", index, "sources", sourceIndex, "reportMonth"] });
+    });
+  });
+  report.additionalItems.forEach((item, index) => addId(item.id, ["additionalItems", index, "id"]));
+});
+
+export const monthlyExpenseReportSaveSchema = z.object({
+  snapshot: invoiceReportFormSchema,
+  expectedVersion: z.number().int().min(1).max(2_147_483_646).nullable(),
+});
+export const monthlyExpenseReportDeleteSchema = z.object({
+  reportMonth: reportMonthSchema,
+  expectedVersion: z.number().int().min(1).max(2_147_483_647),
+});
+export const monthlyExpenseReportListItemSchema = z.object({
+  reportMonth: reportMonthSchema,
+  version: z.number().int().min(1),
+  updatedAt: z.string().datetime(),
+  rowCount: z.number().int().min(0),
+  totalMinor: z.number().int(),
+  totalOverflow: z.boolean(),
+});
+export const monthlyExpenseReportSavedSchema = z.object({
+  reportMonth: reportMonthSchema,
+  version: z.number().int().min(1),
+  updatedAt: z.string().datetime(),
+});
+export const monthlyExpenseReportLoadedSchema = z.object({
+  reportMonth: reportMonthSchema,
+  version: z.number().int().min(1),
+  snapshot: invoiceReportFormSchema,
 });
 
 export const expensePresetFormSchema = z.object({

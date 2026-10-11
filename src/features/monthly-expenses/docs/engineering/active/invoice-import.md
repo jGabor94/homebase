@@ -4,13 +4,13 @@ Frissítve: **2026-10-07**. Implementált első kör, helyi ellenőrzések és r
 
 ## Cél és hatókör
 
-A család kiválasztott hónapra kézzel indít kimutatást. Számlák Gmailből, PDF-feltöltésből és kézi bevitellel kerülnek a szerkeszthető űrlapra; a közös alapértelmezett sablonok csak az indításkor másolódnak be. A számlák és felvett tételek 50–50% megosztása egész fillérrel, kódosan készül, beépített hitelösszeg nélkül.
+A család az aktuális hónapra kézzel indít új kimutatást, ha arra még nincs mentés, vagy a listából megnyit egy korábbi kimutatást. Számlák Gmailből, PDF-feltöltésből és kézi bevitellel kerülnek a szerkeszthető űrlapra; a közös alapértelmezett sablonok csak az indításkor másolódnak be. A számlák és felvett tételek 50–50% megosztása egész fillérrel, kódosan készül, beépített hitelösszeg nélkül.
 
-Az űrlap csak az oldal helyi állapotában él, újratöltéskor elvész. Az OAuth-hozzáférés a meglévő account táblában tartós, de nincs számla-adatbázis, kimutatástörténet, automatikus mentés vagy Drive-művelet. Az összegzés külön [exportfolyamata](summary-export.md) PDF/PNG/TXT letöltést és mellékletes e-mail-küldést biztosít. A Mentés csak letiltott helyőrző; később kizárólag a számlákat tárolja. A főoldal továbbra is mock dashboard. Ezek külön későbbi feladatok.
+Az űrlap helyi állapota újratöltéskor elvész, ha a kimutatást nem mentették el. A mentés és visszatöltés részleteit a [havi kimutatásmentési specifikáció](monthly-report-storage.md) írja le; a számlák normalizált oszlopokban, az egyedi és sablonból másolt összegző tételek a szülő JSONB mezőjében tárolódnak, fájltartalom nélkül. Az OAuth-hozzáférés a meglévő account táblában tartós; automatikus mentés és Drive-művelet nincs. Az összegzés külön [exportfolyamata](summary-export.md) PDF/PNG/TXT letöltést és mellékletes e-mail-küldést biztosít. A főoldal továbbra is mock dashboard.
 
 ## Felhasználói folyamat és mezők
 
-1. Hónapválasztás és új kimutatás indítása. Hónapváltásnál a meglévő helyi adatok eldobása megerősítést kér.
+1. A kezdőnézetben a mentett kimutatások listája és feltételesen az aktuális havi indítógomb jelenik meg. Megnyitás után külön részletnézet mutatja a számlákat és az összegzést; visszalépéskor a nem mentett módosítások eldobása megerősítést kér.
 2. Három egységes művelet: Gmail-beolvasás/összekapcsolás, PDF-feltöltés, kézi számlafelvitel. Mobilon egy oszlopban.
 3. Számlakártyák egy listában, kategóriacímek és üres kategória-helyőrzők nélkül. A kategória megmarad az adatokban, egy szolgáltatáshoz több sor is tartozhat.
 4. Az **Összegzés** oldalsáv a számlák szolgáltatástípusát, szolgáltatóját és összegét, majd a havi tételeket, az **Összesen** és egyetlen **Fele** sort mutatja. Nincs beépített hitel vagy külön számla-részösszeg. A „Fele” kijelzés egész forintra kerekít; a belső számítás fillérpontos.

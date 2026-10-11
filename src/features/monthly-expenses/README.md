@@ -4,11 +4,14 @@ A család kézzel indított havi elszámolásai: számlák előkészítése Gmai
 
 ## Állapot
 
-Frissítve: **2026-10-10**. Az aktuális működést ez a README és az aktív mérnöki dokumentumok rögzítik; a [korábbi átadási jegyzet](../../../.claude/handoffs/2026-10-06-182233-monthly-expenses.md) történeti háttér.
+Frissítve: **2026-10-11**. Az aktuális működést ez a README és az aktív mérnöki dokumentumok rögzítik; a [korábbi átadási jegyzet](../../../.claude/handoffs/2026-10-06-182233-monthly-expenses.md) történeti háttér.
 
-Az implementáció a `/app/monthly-expenses` oldalon érhető el. Az `/app` közös shadcn sidebarjának „Közművek” menüpontja ide vezet; a dashboard adatai továbbra is fiktívek. A számlák csak az oldal helyi állapotában élnek, újratöltéskor elvesznek. A saját Gmailből három eredeti októberi PDF letöltése, beolvasása, összevonása és ismételt importja élő próbában sikeres volt.
+Az implementáció a `/app/monthly-expenses` oldalon érhető el. Az `/app` közös shadcn sidebarjának „Közművek” menüpontja ide vezet; a dashboard adatai továbbra is fiktívek. A hónap teljes szerkeszthető állapota menthető, a mentett hónapok a listából később megnyithatók. A számlák a `invoices` táblában, típusos oszlopokban tárolódnak; a számla nélküli, egyedi vagy sablonból másolt tételek a havi kimutatás `additional_items` JSONB mezőjében maradnak. PDF-fájlt és feltöltési blobot nem tárolunk; a korábban feltöltött számla előnézete újranyitás után nem érhető el. A saját Gmailből három eredeti októberi PDF letöltése, beolvasása, összevonása és ismételt importja élő próbában sikeres volt.
 
 - [Mérnöki terv](docs/engineering/active/invoice-import.md): működés, adatfolyam, invariánsok, hibakezelés és elfogadási feltételek.
+- [Havi kimutatások mentése](docs/engineering/active/monthly-report-storage.md): teljes szerkeszthető pillanatkép, hozzáférés, ütközés- és verziókezelés.
+- [Relációs számlatárolás](docs/engineering/active/normalized-invoices.md): oszlopmodell, snapshot mapping, tranzakciók és adatátállítási sorrend.
+- [Kimutatáslista és törlés](docs/implementation/archive/report-list-management.md): részletnézet, indítási feltétel, törlés és commit előtti ellenőrzések.
 - [Implementációs terv](docs/implementation/active/invoice-import.md): munkaszakaszok, érintett fájlok, integrációs előfeltételek és célzott ellenőrzések.
 - [Közös sablonok mérnöki leírása](docs/engineering/active/expense-presets.md): hozzáférés, tartós tárolás és helyi másolatok.
 - [Alapértelmezett sablonok](docs/implementation/archive/preset-defaults.md): befejezett implementáció és adatbázisos ellenőrzés.
@@ -16,21 +19,25 @@ Az implementáció a `/app/monthly-expenses` oldalon érhető el. Az `/app` köz
 
 ## Első fejlesztési kör
 
-- Év/hónap kiválasztása és új, helyi kimutatás indítása.
+- Kimutatások listája a legújabb hónap finom kiemelésével; új kimutatás csak az aktuális hónapra indítható, ha még nincs hozzá mentés.
 - Egy saját Gmail-fiók számláinak beolvasása gombnyomásra.
 - Manuális PDF-feltöltésből új számlasorok automatikus létrehozása.
 - Új számla kézi felvitele, az automatikusan kitöltött adatok javítása.
-- A kimutatásban számla nélkül is felvehető előre ismert tétel névvel és összeggel; a beérkező számla megérkezésekor ezt a sort kézzel törölni kell. Ezek az adatok is csak az aktuális böngészőfülben élnek.
+- A kimutatásban számla nélkül is felvehető előre ismert tétel névvel és összeggel; a beérkező számla megérkezésekor ezt a sort kézzel törölni kell. A számlákkal együtt ezek a tételek is menthetők és visszatölthetők.
 - A **Beállítások** oldalon közös, több eszközről elérhető tételsablonok hozhatók létre, szerkeszthetők és törölhetők. Az alapértelmezettnek jelölt sablonok az új kimutatás indításakor automatikusan másolatként kerülnek be; a későbbi sablonmódosítás vagy törlés nem változtatja meg a havi sort.
 - Vercel AI SDK + AI Gateway csak a szükséges adatkinyeréshez; kódos keresés, normalizálás, validálás, duplikációszűrés és számolás.
 
-Az oldalsó összegzés PDF-, PNG- vagy TXT-fájlként letölthető és Gmailen elküldhető. A Mentés letiltott helyőrző; a későbbi művelet csak a tényleges számlákat tárolja. Számla-adatbázis és Drive-mentés nincs. A közös sablonok `expense_presets` adatbázis-táblája létrejött, tárolásuk tartós. Az OAuth-hozzáférés a meglévő hitelesítési infrastruktúrát használja, elkülönítve a későbbi számlatárolástól.
+Az oldalsó összegzés PDF-, PNG- vagy TXT-fájlként letölthető és Gmailen elküldhető. A Mentés a havi kimutatást a `monthly_expense_reports`, a hozzá tartozó számlákat az `invoices` táblában tárolja; egy hónaphoz egy közös kimutatás tartozik. A megnyitott kimutatás verziózott mentése megakadályozza, hogy egy régebbi példány csendben felülírjon egy frissebb változatot. PDF-fájl, blob URL és fájltartalom nem kerül az adatbázisba. A közös sablonok `expense_presets` táblája is tartós; az OAuth-hozzáférés a meglévő hitelesítési infrastruktúrát használja.
 
 Az általános fejlesztési szabályokat a [feature-konvenciók](../AGENTS.md), a megjelenést a [Homebase design](../../../.agents/DESIGN.md) írja le.
 
 ## Beállítás
 
 ### Aktuális felület és adatkinyerés
+
+A kezdőnézetben kizárólag a mentett kimutatások listája jelenik meg; a legújabb hónap visszafogott kiemelést kap. Egyetlen **Új kimutatás · [aktuális hónap]** gomb indítja a Budapest szerinti aktuális hónapot, ha a listában még nincs hozzá mentés. Nincs hónapválasztó vagy nagy indítókártya. A számlák és a jobb oldali összegzés csak indítás vagy megnyitás után, a részletnézetben láthatók. A **Kimutatások** gomb visszavisz a listára, a nem mentett módosítások eldobása előtt megerősítéssel. A mentési gomb felirata mindig **Mentés**.
+
+A listában külön törlésgomb tartozik minden kimutatáshoz. Megerősítés után a hónap és az ismert verzió alapján védett Server Action törli a szülőt, a kapcsolódó számlasorokat és a hozzáadott tételeket. Másutt módosított vagy már törölt kimutatásnál hiba jelenik meg, nem történik vak törlés. A közös tételsablonok megmaradnak; az aktuális hónap törlése után újra látszik az indítógomb.
 
 Az oldalsáv címe **Összegzés**, a végösszeg **Összesen**, alatta egyetlen **Fele** sor látható. A felezés fillérpontos, a kijelzett félösszeg egész forintra kerekített. A tételek neve, összege és törlésgombja egy sorban van. Mentett sablonnál a név sima szöveg, egyedi tételnél szerkeszthető. A választó csak a „Tétel hozzáadása” gombbal nyílik meg, ekkor automatikusan frissül a lista. A külön frissítésgomb, számla-részösszeg, beépített hitelsor, „Számla nélkül” magyarázatok és „részleges, ellenőrzendő” összegzésfelirat eltűntek; az import tényleges hibái és figyelmeztetései megmaradnak.
 
@@ -50,7 +57,7 @@ A környezeti változókat a tulajdonos adja meg a futtatókörnyezetben. A kulc
 
 | Változó | Mire kell? |
 | --- | --- |
-| `DATABASE_URL` | Felhasználók, OAuth-accountok és közös `expense_presets` sablonok. Számlaadatok nem kerülnek az adatbázisba. |
+| `DATABASE_URL` | Felhasználók, OAuth-accountok, közös `expense_presets` sablonok és mentett havi `monthly_expense_reports` kimutatások a kapcsolódó `invoices` számlasorokkal. PDF-fájlok nem kerülnek az adatbázisba. |
 | `AUTH_SECRET` | Auth.js munkamenetek hitelesítéséhez. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | A saját Google OAuth webalkalmazás hozzáférése. |
 | `BOOTSTRAP_ADMIN_EMAIL` | Az első Google-regisztrációkor admin szerepet kapó saját e-mail-cím. Meglévő felhasználó szerepét nem változtatja meg utólag. |
@@ -86,7 +93,7 @@ A gyűjtés `complete` jelzője kizárólag a technikai teljességet jelenti: mi
 - A jóváírások, helyesbítések és sztornók, illetve az azonosított kapcsolódó eredetik ebben a verzióban kimaradnak az összegzésből; automatikus nettósításuk még nincs.
 - Az összesítés a számlák és a kézi vagy sablonból másolt tételek összegét fillérpontosan felezi; nincs automatikusan hozzáadott hitelösszeg.
 - A portálbelépést vagy CAPTCHA-t igénylő számláknál manuális PDF-feltöltés szükséges.
-- Nincs automatikus mentés, Drive-művelet vagy számlafizetés. Az export és a mellékletes levélküldés külön felhasználói gombnyomásra indul.
+- Nincs automatikus mentés vagy Drive-művelet; a kimutatást a felhasználó külön menti. A PDF-export és a mellékletes levélküldés szintén külön gombnyomásra indul. A mentett adatok nem indítanak számlafizetést.
 
 Célzott tesztek: `npm run test:monthly-expenses` — 2026-10-07-én **54/54 sikeres teszt**, sikeres teljes lint és típusellenőrzés. A 2026-10-05-i élő Gmail-próba két MVM villany- és egy ALFÖLDVÍZ-számlát dolgozott fel, importfigyelmeztetés és mezőhiba nélkül. A fizetendő összegek, határidők, számlaszámok és időszakok ellenőrzése, a különböző PDF-ek megkülönböztetése, az ismételt import duplikációszűrése és az összesítés is átment. Ezeket a szöveges PDF-eket kódosan olvassuk ki, Gateway-hívás nélkül. Az MVM első oldalának szolgáltatása elsőbbséget kap a későbbi energiamix-tájékoztatóval szemben; az ALFÖLDVÍZ külön sorokban tárolt címkéit és értékeit szigorú elrendezésfelismerés kapcsolja össze. A dokumentumazonosító az eredeti bájtok SHA-256 lenyomata, még a parser bufferátadása előtt. A valódi számlák nem kerültek a repositoryba. Szkennelt számlák élő felismerése és a bejelentkezett felület teljes böngészős ellenőrzése még nem igazolt. A részletes eredményeket az implementációs terv rögzíti.
 

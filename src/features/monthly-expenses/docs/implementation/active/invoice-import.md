@@ -6,6 +6,8 @@ Az aktuális működés és invariánsok a [mérnöki dokumentumban](../../engin
 
 ## Elkészült munkaszakaszok
 
+A korábbi importmunkaszakaszok alább történeti állapotot rögzítenek. 2026-10-11-re elkészült a [kimutatások tartós mentése](../archive/monthly-report-storage.md), a [normalizált számlatárolás](../archive/normalized-invoices.md), valamint a lista–részletek felület és a verzióellenőrzött kimutatástörlés. Új kimutatás az aktuális hónapra indítható, ha arra még nincs mentés; a korábbi hónapok a listából nyithatók meg. A jelenlegi működéshez a [mentési specifikáció](../../engineering/active/monthly-report-storage.md) az irányadó.
+
 - [x] Feature-first `monthly-expenses`, Zod-sémák és inferált típusok; helyi hónapindítás, alapértelmezett közös tételek snapshotja, kézi számlasor és PDF-feltöltés.
 - [x] Védett `/monthly-expenses`, Google-login, admin jogosultság és kijelölt Gmail-tulajdonos ellenőrzése.
 - [x] Külön `gmail.readonly` OAuth-consent, access/refresh token tárolása a meglévő account infrastruktúrában; kontrollált tokenfrissítés, meglévő refresh token megőrzése.
@@ -74,7 +76,7 @@ Commit előtti ellenőrzés: `npm run test:monthly-expenses` **54/54 sikeres**, 
 ## Nyitott elfogadási lépések
 
 - [ ] Élő gáz- és MOHU-számlák, szkennelt és módosító dokumentumok; a szélesebb referenciahalmaz hiányainak és helyes értékeinek ellenőrzése.
-- [ ] Teljes bejelentkezett felület: import közbeni kézi szerkesztés, hónapváltás, törlés, újraimport, mobil, billentyűzet, natív PDF-előnézet és visszavont kapcsolat utáni UX.
+- [ ] Teljes bejelentkezett felület: import közbeni kézi szerkesztés, visszatérés a listára, mentés/betöltés, kimutatás- és számlasortörlés, újraimport, mobil, billentyűzet, natív PDF-előnézet és visszavont kapcsolat utáni UX.
 - [ ] Google/Gateway képesség és tényleges PDF-input költség ellenőrzése aktuális hivatalos adatokkal; nincs rögzített ár vagy általános free-tier ígéret.
 - [ ] Hosting upload- és futásidőkorlátjai; éles DB/auth konfiguráció és a legutóbbi változások production ellenőrzése, ha telepítés vagy push lesz a feladat.
 - [ ] Ismeretlen számlaelrendezés teljesnek látszó téves kódos eredményének kezelése: jelenleg nem indít második AI-ellenőrzést.
@@ -83,4 +85,4 @@ Commit előtti ellenőrzés: `npm run test:monthly-expenses` **54/54 sikeres**, 
 
 A felhasználó felvetette az AI elsődleges olvasóként használatát és a fájlfeltöltés fogyasztását. Nem történt átállás, a költségkutatás félbeszakadt. A tényleges kód továbbra is determinisztikus első lépés + AI-fallback. Az új szálban a költségre adott válasz és a kívánt irány tisztázása előzze meg az átállást; a korábbi felvetést ne nevezd elkészült funkciónak.
 
-Számlák tartós mentése, history/diagram, családi jegyzetek, Drive és automatikus korrekciós nettósítás külön scope. Az export és e-mail a [befejezett exportterv](../archive/summary-export.md) része. A jelen terv nem kér migrációt, `.env*` szerkesztést, commitot, push-t vagy deployt.
+History/diagram, családi jegyzetek, Drive és automatikus korrekciós nettósítás külön scope. A számlaadatok és kimutatások tartós mentése már elkészült a fent hivatkozott külön megvalósításokban. Az export és e-mail a [befejezett exportterv](../archive/summary-export.md) része. A jelen terv önmagában nem kér migrációt, `.env*` szerkesztést, commitot, push-t vagy deployt.

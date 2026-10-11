@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { expensePresetsTable } from "./drizzle/schema";
+import { expensePresetsTable, invoicesTable, monthlyExpenseReportsTable } from "./drizzle/schema";
 import {
   aiInvoiceListSchema,
   additionalItemSchema,
@@ -9,6 +9,11 @@ import {
   invoiceImportResultSchema,
   invoiceMonthInputSchema,
   invoiceReportFormSchema,
+  monthlyExpenseReportListItemSchema,
+  monthlyExpenseReportLoadedSchema,
+  monthlyExpenseReportSaveSchema,
+  monthlyExpenseReportDeleteSchema,
+  monthlyExpenseReportSavedSchema,
   invoiceRowSchema,
   expensePresetFormSchema,
   expensePresetIdSchema,
@@ -19,6 +24,11 @@ export type InvoiceRowInput = z.infer<typeof invoiceRowSchema>;
 export type AdditionalItemInput = z.infer<typeof additionalItemSchema>;
 export type InsertExpensePreset = typeof expensePresetsTable.$inferInsert;
 export type SelectExpensePreset = typeof expensePresetsTable.$inferSelect;
+export type InsertMonthlyExpenseReport = typeof monthlyExpenseReportsTable.$inferInsert;
+export type SelectMonthlyExpenseReport = typeof monthlyExpenseReportsTable.$inferSelect;
+export type InsertInvoice = typeof invoicesTable.$inferInsert;
+export type SelectInvoice = typeof invoicesTable.$inferSelect;
+export type CompleteInsertInvoice = InsertInvoice & Omit<SelectInvoice, "createdAt" | "updatedAt">;
 export type ExpensePresetList = Awaited<ReturnType<typeof import("./drizzle/operations").getExpensePresets>>;
 export type ExpensePresetDto = ExpensePresetList[number];
 export type ExpensePresetActionResult<T> =
@@ -28,6 +38,13 @@ export type ExpensePresetFormInput = z.infer<typeof expensePresetFormSchema>;
 export type ExpensePresetIdInput = z.infer<typeof expensePresetIdSchema>;
 export type UpdateExpensePresetInput = z.infer<typeof updateExpensePresetSchema>;
 export type InvoiceReportInput = z.infer<typeof invoiceReportFormSchema>;
+export type MonthlyExpenseReportSaveInput = z.infer<typeof monthlyExpenseReportSaveSchema>;
+export type MonthlyExpenseReportDeleteInput = z.infer<typeof monthlyExpenseReportDeleteSchema>;
+export type MonthlyExpenseReportSaved = z.infer<typeof monthlyExpenseReportSavedSchema>;
+export type MonthlyExpenseReportLoaded = z.infer<typeof monthlyExpenseReportLoadedSchema>;
+export type MonthlyExpenseReportListItemDto = z.infer<typeof monthlyExpenseReportListItemSchema>;
+export type MonthlyExpenseReportList = Awaited<ReturnType<typeof import("./drizzle/operations").getMonthlyExpenseReports>>;
+export type MonthlyExpenseReportItem = MonthlyExpenseReportList[number];
 export type InvoiceMonthInput = z.infer<typeof invoiceMonthInputSchema>;
 export type GmailCandidate = z.infer<typeof gmailCandidateSchema>;
 export type GmailDocumentReference = z.infer<typeof gmailDocumentReferenceSchema>;

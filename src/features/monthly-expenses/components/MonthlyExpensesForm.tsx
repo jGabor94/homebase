@@ -1,20 +1,22 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FileUp, LoaderCircle, Mail, Plus, RefreshCw } from "lucide-react";
-import { useEffect, useRef, useState, type ChangeEvent, type FC } from "react";
+import { ArrowLeft, FileUp, LoaderCircle, Mail, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { startTransition, useEffect, useRef, useState, type ChangeEvent, type FC } from "react";
 import { FormProvider, useFieldArray, useForm, useWatch } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
 import { INVOICE_CATEGORY_LABELS, MAX_UPLOAD_BYTES } from "../config";
 import { connectGmail } from "../dal/connection";
 import { collectGmailInvoices, importGmailInvoice } from "../dal/mutations";
+import { deleteMonthlyExpenseReport, loadMonthlyExpenseReport, saveMonthlyExpenseReport } from "../dal/mutations";
 import { loadExpensePresets } from "../dal/presets";
-import type { ExpensePresetDto, GmailCandidate, GmailDocumentReference, InvoiceReportInput, InvoiceRowInput, InvoiceSource } from "../types";
+import type { ExpensePresetDto, GmailCandidate, GmailDocumentReference, InvoiceReportInput, InvoiceRowInput, InvoiceSource, MonthlyExpenseReportItem } from "../types";
 import { createEmptyInvoice, getInvoiceMergeKeys, mergeImportedInvoices, summarizeInvoices } from "../utils";
 import { createAdditionalItemFromPreset, createDefaultAdditionalItems } from "../utils/expense-presets";
 import { formatMinorAsHuf } from "../utils/money";
 import { createSummaryExportSnapshot } from "../utils/summary-export";
 import { invoiceReportFormSchema } from "../zod/schema";
+import { formatMinorAsHuf as formatReportTotal } from "../utils/money";
 import AdditionalExpenseRow from "./AdditionalExpenseRow";
 import ExpenseSummaryExportDialog from "./ExpenseSummaryExportDialog";
 import InvoiceRowCard from "./InvoiceRowCard";
@@ -27,6 +29,8 @@ interface MonthlyExpensesFormProps {
   initialGmailConnected: boolean;
   initialExpensePresets: ExpensePresetDto[];
   initialPresetsError: string | null;
+  initialStoredReports: MonthlyExpenseReportItem[];
+  initialStoredReportsError: string | null;
 }
 
 const formatMonth = (monthKey: string) => new Intl.DateTimeFormat("hu-HU", { year: "numeric", month: "long", timeZone: "UTC" })
@@ -53,7 +57,7 @@ const runWithConcurrency = async <T,>(items: T[], concurrency: number, operation
   await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
 };
 
-const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initialGmailConnected, initialExpensePresets, initialPresetsError }) => {
+const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initialGmailConnected, initialExpensePresets, initialPresetsError, initialStoredReports, initialStoredReportsError }) => {
   const form = useForm<InvoiceReportInput>({
     mode: "all",
     resolver: zodResolver(invoiceReportFormSchema),
@@ -66,6 +70,12 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
   const invoices = useWatch({ control, name: "invoices" }) ?? [];
   const additionalItems = useWatch({ control, name: "additionalItems" }) ?? [];
   const [reportCreated, setReportCreated] = useState(false);
+  const [reportVersion, setReportVersion] = useState<number | null>(null);
+  const [storedReports, setStoredReports] = useState(initialStoredReports);
+  const [reportSaving, setReportSaving] = useState(false);
+  const [reportLoadingMonth, setReportLoadingMonth] = useState<string | null>(null);
+  const [reportDeletingMonth, setReportDeletingMonth] = useState<string | null>(null);
+  const [reportError, setReportError] = useState<string | null>(null);
   const [phase, setPhase] = useState<ImportPhase>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
@@ -83,6 +93,7 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
   const runId = useRef(0);
   const deletedKeys = useRef(new Set<string>());
   const reportStartPending = useRef(false);
+  const reportOperationPending = useRef(false);
 
   useEffect(() => () => {
     runId.current += 1;
@@ -92,6 +103,7 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
 
   const summary = summarizeInvoices(invoices, 0, additionalItems);
   const displayTotalLabel = "Összesen";
+  const canCreateReport = !initialStoredReportsError && !storedReports.some((report) => report.reportMonth === initialMonth);
 
   const openExport = () => {
     const current = getValues();
@@ -134,11 +146,10 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
     return true;
   };
 
-  const handleMonthChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const nextMonth = event.target.value;
-    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(nextMonth) || Number(nextMonth.slice(0, 4)) < 2000 || Number(nextMonth.slice(0, 4)) > 2100 || nextMonth === reportMonth) return;
-    if (reportCreated && (invoices.length > 0 || additionalItems.length > 0 || Boolean(phase))) {
-      const confirmed = window.confirm("Az aktuális kimutatás csak ezen az oldalon él, és nincs elmentve. A hónapváltás eldobja a számlákat és az előre felvett tételeket. Folytatod?");
+  const returnToList = () => {
+    if (reportOperationPending.current || phase || reportStartPending.current) return;
+    if (form.formState.isDirty && reportCreated) {
+      const confirmed = window.confirm("A nem mentett változtatások elvesznek. Visszatérsz a kimutatásokhoz?");
       if (!confirmed) {
         return;
       }
@@ -153,9 +164,11 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
     setWarnings([]);
     setStatus(null);
     setPhase(null);
-    reset({ reportMonth: nextMonth, invoices: [], additionalItems: [] });
+    reset({ reportMonth: initialMonth, invoices: [], additionalItems: [] });
     setItemPickerOpen(false);
     setReportCreated(false);
+    setReportVersion(null);
+    setReportError(null);
   };
 
   const refreshExpensePresets = async () => {
@@ -190,7 +203,7 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
   };
 
   const startNewReport = async () => {
-    if (reportCreated || presetsRefreshing || reportStartPending.current) return;
+    if (!canCreateReport || reportCreated || presetsRefreshing || reportStartPending.current || reportOperationPending.current) return;
     reportStartPending.current = true;
     const targetMonth = getValues("reportMonth");
     const expectedRunId = runId.current;
@@ -207,12 +220,116 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
       setPresetSelection("");
       appendAdditionalItem(createDefaultAdditionalItems(result.data, () => crypto.randomUUID()), { shouldFocus: false });
       setReportCreated(true);
+      setReportVersion(null);
     } catch {
       setPresetsError("A mentett alapértelmezett tételek most nem tölthetők be. Próbáld újra.");
     } finally {
       reportStartPending.current = false;
       setPresetsRefreshing(false);
     }
+  };
+
+  const saveReport = () => {
+    if (!reportCreated || reportOperationPending.current || phase) return;
+    const parsed = invoiceReportFormSchema.safeParse(getValues());
+    if (!parsed.success) {
+      setReportError(parsed.error.issues[0]?.message ?? "Ellenőrizd a kimutatás adatait mentés előtt.");
+      toast.error("A kimutatás hibás adatot tartalmaz, ezért nem mentettem el.");
+      return;
+    }
+    reportOperationPending.current = true;
+    setReportSaving(true);
+    setReportError(null);
+    startTransition(async () => {
+      try {
+        const result = await saveMonthlyExpenseReport(parsed.data, reportVersion);
+        if (!result.success) {
+          setReportError(result.error.message);
+          toast.error(result.error.message);
+          return;
+        }
+        setReportVersion(result.data.version);
+        reset(parsed.data);
+        setStoredReports((current) => {
+          const next = current.filter((report) => report.reportMonth !== result.data.reportMonth);
+          const summary = summarizeInvoices(parsed.data.invoices, 0, parsed.data.additionalItems);
+          return [{ reportMonth: result.data.reportMonth, version: result.data.version, updatedAt: result.data.updatedAt, rowCount: parsed.data.invoices.length + parsed.data.additionalItems.length, totalMinor: summary.totalMinor, totalOverflow: summary.totalOverflow }, ...next].sort((a, b) => b.reportMonth.localeCompare(a.reportMonth));
+        });
+        toast.success("A havi kimutatás elmentve.");
+      } catch {
+        setReportError("A kimutatás most nem menthető. Próbáld újra.");
+        toast.error("A kimutatás most nem menthető. Próbáld újra.");
+      } finally {
+        reportOperationPending.current = false;
+        setReportSaving(false);
+      }
+    });
+  };
+
+  const openStoredReport = (targetMonth: string) => {
+    if (reportOperationPending.current || reportStartPending.current || presetsRefreshing || phase) return;
+    if (reportCreated && form.formState.isDirty && !window.confirm("A nem mentett változtatások elvesznek. Megnyitod a mentett kimutatást?")) return;
+    reportOperationPending.current = true;
+    setReportLoadingMonth(targetMonth);
+    setReportError(null);
+    startTransition(async () => {
+      try {
+        const result = await loadMonthlyExpenseReport(targetMonth);
+        if (!result.success) {
+          setReportError(result.error.message);
+          toast.error(result.error.message);
+          return;
+        }
+        runId.current += 1;
+        deletedKeys.current.clear();
+        uploadUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+        uploadUrlsRef.current.clear();
+        setUploadPreviewUrls({});
+        setPreviewSource(null);
+        setWarnings(result.data.snapshot.invoices.some((invoice) => invoice.sources.some((source) => source.kind === "upload"))
+          ? ["A korábban feltöltött PDF-ek előnézete az újranyitott kimutatásban nem érhető el."]
+          : []);
+        setStatus(null);
+        setPhase(null);
+        setItemPickerOpen(false);
+        setPresetSelection("");
+        reset(result.data.snapshot);
+        setReportCreated(true);
+        setReportVersion(result.data.version);
+      } catch {
+        setReportError("A kimutatás most nem tölthető be. Próbáld újra.");
+        toast.error("A kimutatás most nem tölthető be. Próbáld újra.");
+      } finally {
+        reportOperationPending.current = false;
+        setReportLoadingMonth(null);
+      }
+    });
+  };
+
+  const deleteStoredReport = (report: MonthlyExpenseReportItem) => {
+    if (reportOperationPending.current || reportStartPending.current || presetsRefreshing || phase) return;
+    if (!window.confirm(`Törlöd a(z) ${formatMonth(report.reportMonth)} havi kimutatást és minden hozzá tartozó számlaadatot, valamint hozzáadott tételt? A törlés nem vonható vissza.`)) return;
+    reportOperationPending.current = true;
+    setReportDeletingMonth(report.reportMonth);
+    setReportError(null);
+    startTransition(async () => {
+      try {
+        const result = await deleteMonthlyExpenseReport({ reportMonth: report.reportMonth, expectedVersion: report.version });
+        if (!result.success) {
+          setReportError(result.error.message);
+          toast.error(result.error.message);
+          return;
+        }
+        setStoredReports((current) => current.filter((item) => item.reportMonth !== result.data.reportMonth));
+        toast.success("A kimutatás törölve.");
+      } catch {
+        setReportError("A kimutatás most nem törölhető. Próbáld újra.");
+        toast.error("A kimutatás most nem törölhető. Próbáld újra.");
+      } finally {
+        reportOperationPending.current = false;
+        setReportDeletingMonth(null);
+      }
+    });
   };
 
   const addManualInvoice = () => {
@@ -380,25 +497,45 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
   return (
     <FormProvider {...form}>
       <Toaster position="bottom-center" toastOptions={{ duration: 4500, style: { background: "#fffcf7", color: "#42271e", border: "1px solid #e9dfd1" } }} />
-      <form noValidate onSubmit={(event) => event.preventDefault()} className="grid gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(280px,0.8fr)]">
-        <section aria-label="Havi számlák" className="rounded-[20px] border border-border bg-card p-5 shadow-[0_8px_24px_rgba(91,61,36,0.06)] sm:p-7">
-          <div className="flex flex-wrap items-start gap-4">
-            <label className="flex w-full flex-wrap items-center gap-3 border-b border-border pb-5 text-sm font-medium text-foreground">
-              Elszámolás hónapja
-              <input type="month" value={reportMonth} onChange={handleMonthChange} min="2000-01" max="2100-12" aria-label="Elszámolás hónapja" className="min-h-11 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-ring" />
-            </label>
-          </div>
-
-          {!reportCreated ? (
-            <div className="mt-6 rounded-2xl border border-dashed border-border bg-background p-6 text-center sm:p-8">
-              <p className="font-serif text-xl font-semibold text-foreground">{formatMonth(reportMonth)} kimutatása</p>
-              <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted-foreground">A kimutatás csak ebben a böngészőfülben él. Újratöltéskor eltűnik, ezért az elkészült összegeket mentsd el magadnak.</p>
-              {presetsError && <p role="status" className="mx-auto mt-3 max-w-lg text-sm text-muted-foreground">{presetsError} Indítsd újra a betöltést a gombbal.</p>}
-              <button type="button" onClick={() => void startNewReport()} disabled={presetsRefreshing} className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-5 font-medium text-primary-foreground shadow-sm hover:brightness-95 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-                {presetsRefreshing && <RefreshCw aria-hidden="true" className="size-4 animate-spin" />}<Plus aria-hidden="true" className="size-5" /> {presetsRefreshing ? "Alapértelmezettek betöltése…" : "Új kimutatás indítása"}
-              </button>
+      <form noValidate onSubmit={(event) => event.preventDefault()} className={`grid gap-5 ${reportCreated ? "lg:grid-cols-[minmax(0,1.7fr)_minmax(280px,0.8fr)]" : ""}`}>
+        <fieldset disabled={reportSaving || reportLoadingMonth !== null || reportDeletingMonth !== null} className="contents">
+          {reportError && <p role="alert" className="col-span-full rounded-xl border border-primary/25 bg-note-peach/60 px-4 py-3 text-sm text-foreground">{reportError}</p>}
+          {initialStoredReportsError && <p role="alert" className="col-span-full rounded-xl border border-primary/25 bg-note-peach/60 px-4 py-3 text-sm text-foreground">{initialStoredReportsError}</p>}
+          {!reportCreated && (
+            <section aria-label="Mentett havi kimutatások" className="col-span-full rounded-[20px] border border-border bg-card p-5 shadow-[0_8px_24px_rgba(91,61,36,0.06)] sm:p-6">
+              {canCreateReport && (
+                <button type="button" onClick={() => void startNewReport()} disabled={presetsRefreshing || reportLoadingMonth !== null || reportSaving} className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground hover:brightness-95 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+                  {presetsRefreshing ? <RefreshCw aria-hidden="true" className="size-4 animate-spin" /> : <Plus aria-hidden="true" className="size-4" />}
+                  Új kimutatás · {formatMonth(initialMonth)}
+                </button>
+              )}
+              {presetsError && <p role="status" className="mb-4 text-sm text-muted-foreground">{presetsError}</p>}
+              <h2 className="font-serif text-xl font-semibold text-foreground">Mentett kimutatások</h2>
+              {storedReports.length === 0 && !initialStoredReportsError && <p className="mt-3 text-sm text-muted-foreground">Még nincs mentett kimutatás.</p>}
+              <ul className="mt-3 space-y-2">
+                {storedReports.map((report, index) => <li key={report.reportMonth} className={`flex items-center gap-2 rounded-xl border pr-2 ${index === 0 ? "border-accent/25 bg-note-sage/30" : "border-border bg-background"}`}>
+                  <button type="button" onClick={() => openStoredReport(report.reportMonth)} disabled={reportLoadingMonth !== null || reportSaving || presetsRefreshing} className="flex min-h-16 min-w-0 flex-1 flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3 text-left transition-colors hover:bg-note-yellow/30 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+                    <span>
+                      <span className="block font-medium text-foreground">{formatMonth(report.reportMonth)}</span>
+                      <span className="block text-sm text-muted-foreground">{report.rowCount} sor · {report.totalOverflow ? "Összesítés túl nagy" : `${formatReportTotal(report.totalMinor)} Ft`}</span>
+                    </span>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {reportLoadingMonth === report.reportMonth ? "Betöltés…" : "Megnyitás"}
+                  </span>
+                  </button>
+                  <button type="button" onClick={() => deleteStoredReport(report)} disabled={presetsRefreshing} aria-label={`${formatMonth(report.reportMonth)} kimutatásának törlése`} title="Kimutatás törlése" className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+                    {reportDeletingMonth === report.reportMonth ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin" /> : <Trash2 aria-hidden="true" className="size-4" />}
+                  </button>
+                </li>)}
+              </ul>
+            </section>
+          )}
+          {reportCreated && <>
+            <div className="col-span-full flex flex-wrap items-center gap-4">
+              <button type="button" onClick={returnToList} disabled={Boolean(phase)} className="inline-flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"><ArrowLeft aria-hidden="true" className="size-4" /> Kimutatások</button>
+              <h2 className="font-serif text-2xl font-semibold text-foreground">{formatMonth(reportMonth)}</h2>
             </div>
-          ) : (
+        <section aria-label="Havi számlák" className="rounded-[20px] border border-border bg-card p-5 shadow-[0_8px_24px_rgba(91,61,36,0.06)] sm:p-7">
             <>
               <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <button type="button" onClick={() => void (gmailConnected ? importFromGmail() : connectMailbox())} disabled={Boolean(phase)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-3 text-sm font-medium text-primary-foreground shadow-sm hover:brightness-95 disabled:cursor-wait disabled:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
@@ -430,16 +567,12 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
                 </div>
               )}
             </>
-          )}
         </section>
 
         <aside className="h-fit rounded-[20px] border border-border bg-card p-5 shadow-[0_8px_24px_rgba(91,61,36,0.06)] sm:p-6 lg:sticky lg:top-5" aria-labelledby="summary-heading">
-          <h2 id="summary-heading" className="font-serif text-[26px] font-semibold leading-tight text-foreground">{reportCreated ? "Összegzés" : "Nincs aktív kimutatás"}</h2>
+          <h2 id="summary-heading" className="font-serif text-[26px] font-semibold leading-tight text-foreground">Összegzés</h2>
 
           {summary.totalOverflow && <p role="alert" className="mt-3 rounded-xl bg-note-peach p-3 text-sm">Az összegek meghaladják a biztonságos számolási korlátot. Az összesítésből kimaradtak tételek; ellenőrizd a megadott összegeket.</p>}
-          {!reportCreated ? (
-            <p className="mt-5 rounded-xl bg-background p-4 text-sm leading-6 text-muted-foreground">Az alapértelmezett közös tételek az új kimutatás indításakor kerülnek be.</p>
-          ) : (
             <>
               {invoices.length > 0 && (
                 <ul aria-label="A kimutatás számlái" className="mt-5 space-y-2 border-b border-border pb-4 text-sm">
@@ -494,12 +627,14 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
                 </div>
               </div>
               <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-                <button type="button" disabled title="A mentés jövőbeli funkcióként csak a számlákat tárolja." className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-border bg-background px-4 text-sm font-medium text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-60">Mentés</button>
+                <button type="button" onClick={saveReport} disabled={reportSaving || reportLoadingMonth !== null || Boolean(phase)} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-note-yellow/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-wait disabled:opacity-60">
+                  {reportSaving ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin" /> : null}Mentés
+                </button>
                 <button ref={exportButtonRef} type="button" onClick={openExport} disabled={Boolean(phase)} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-wait disabled:opacity-60">Exportálás…</button>
               </div>
             </>
-          )}
         </aside>
+          </>}
 
         {exportSnapshot && <ExpenseSummaryExportDialog snapshot={exportSnapshot} open={Boolean(exportSnapshot)} onOpenChange={(open) => {
           if (!open) {
@@ -508,6 +643,7 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ initialMonth, initi
           }
         }} />}
         {previewSource && <SourcePreviewDialog key={previewSource.kind === "upload" ? previewSource.documentId : `${previewSource.messageId}-${previewSource.attachmentId ?? previewSource.linkIndex}`} source={previewSource} uploadPreviewUrls={uploadPreviewUrls} onClose={() => setPreviewSource(null)} />}
+        </fieldset>
       </form>
     </FormProvider>
   );
