@@ -4,9 +4,9 @@ A Homebase egy privát, családi használatra készülő webalkalmazás. Célja,
 
 ## Jelenlegi állapot
 
-Frissítve: **2026-10-11**. Az aktuális működést ez a README és a feature dokumentációja írja le. A [korábbi átadási jegyzet](.claude/handoffs/2026-10-06-182233-monthly-expenses.md) az azóta továbbfejlesztett állapot történeti háttere.
+Frissítve: **2026-10-12**. Az aktuális működést ez a README és a feature dokumentációja írja le. A [korábbi átadási jegyzet](.claude/handoffs/2026-10-06-182233-monthly-expenses.md) az azóta továbbfejlesztett állapot történeti háttere.
 
-A publikus főoldal (`/`) bemutatja az alkalmazást; a kizárólag Google-belépést kínáló `/login` oldal után az `/app` alatti családi dashboard látványterve jelenik meg fiktív közműadatokkal, diagrammal és jegyzetekkel. A **Havi kiadások** oldal (`/app/monthly-expenses`) már külön, bejelentkezéssel védett funkció: kézi számlafelvitel, PDF-beolvasás, saját Gmailből indított import és szerkeszthető havi összesítés. Számla nélkül előre felvehető névvel és összeggel egy ismert tétel; amikor megérkezik a számlája, az előre felvett sort kézzel kell törölni. A hónap teljes szerkeszthető kimutatása menthető, és a mentett hónapok később megnyithatók. A számlák típusos mezőkkel az `invoices` táblába, az egyedi és sablonból másolt tételek a kimutatás JSONB oszlopába kerülnek. PDF-fájl vagy feltöltési blob nem kerül mentésre; a korábban feltöltött PDF előnézete ezért újranyitás után nem érhető el. Az oldalsó összegzés PDF-, PNG- és TXT-exportja letölthető, illetve Gmailen mellékletként küldhető. A Gmail és az AI használatához saját konfiguráció szükséges; a közműdiagram a mentett számlák fogyasztását és költségét mutatja, a jegyzetkezelés későbbi feladat. Részletek a [feature leírásában](src/features/monthly-expenses/README.md), a [számlatárolás specifikációjában](src/features/monthly-expenses/docs/engineering/active/normalized-invoices.md), a megjelenés szabályai a [design dokumentumban](.agents/DESIGN.md).
+A publikus főoldal (`/`) bemutatja az alkalmazást; a kizárólag Google-belépést kínáló `/login` oldal után az `/app` alatti családi dashboard látványterve jelenik meg fiktív közműadatokkal, diagrammal és jegyzetekkel. A **Havi kiadások** oldal (`/app/monthly-expenses`) már külön, bejelentkezéssel védett funkció: kézi számlafelvitel, PDF-beolvasás, saját Gmailből indított import és szerkeszthető havi összesítés. Számla nélkül előre felvehető névvel és összeggel egy ismert tétel; amikor megérkezik a számlája, az előre felvett sort kézzel kell törölni. A hónap teljes szerkeszthető kimutatása menthető, és a mentett hónapok később megnyithatók. A számlák típusos mezőkkel az `invoices` táblába, az egyedi és sablonból másolt tételek a kimutatás JSONB oszlopába kerülnek. PDF-fájl vagy feltöltési blob nem kerül mentésre; a korábban feltöltött PDF előnézete ezért újranyitás után nem érhető el. Az oldalsó összegzés PDF-, PNG- és TXT-exportja letölthető, illetve Gmailen mellékletként küldhető. A Gmail és az AI használatához saját konfiguráció szükséges; a közműdiagram a mentett számlák fogyasztását és költségét mutatja, a jegyzetkezelés a konfigurált development adatbázison bevezetve. Részletek a [feature leírásában](src/features/monthly-expenses/README.md), a [számlatárolás specifikációjában](src/features/monthly-expenses/docs/engineering/active/normalized-invoices.md), a megjelenés szabályai a [design dokumentumban](.agents/DESIGN.md).
 
 A `/` landing mindenki számára megtekinthető; egy 20 másodperces, néma, szüneteltethető animáció lebegő, perspektívában mozgó alkalmazásnézetekkel és fiktív adatokkal mutatja be a közműösszesítést és a készülő jegyzeteket. Csökkentett mozgás beállításánál statikus előnézet jelenik meg. A `/login` csak vendégeknek jelenik meg; hitelesítve `/app` címre irányít. Az `/app` és aloldalai NextAuth proxy-védelemmel és szerveroldali ellenőrzéssel működnek. A régi `/monthly-expenses` és `/settings` címek az új app útvonalakra irányítanak. Részletek: [app routing és auth](src/docs/engineering/active/app-routing-auth-sidebar.md).
 
@@ -68,14 +68,14 @@ A tárolt adatokból a következő nézetek készülnek majd:
 
 ## Privát és családi jegyzetek
 
-A másik kezdeti funkció jegyzetek létrehozása, szerkesztése és törlése lesz, kétféle láthatósággal:
+A jegyzetkezelés a `/app/notes` oldalon elkészült és a konfigurált Neon `development` adatbázison bevezetve, papírcetlis üzenőfallal, opcionális címmel, egyszerű szöveggel, félkövér/dőlt formázással és listákkal. A megadott, már létező családtag hozzáférése kiosztva; a másik megadott fiók első Google-belépése még szükséges a kiosztáshoz. A production ág nem változott. Részletek és az adminisztratív hozzáféréskezelő parancs a [notes feature leírásában](src/features/notes/README.md).
 
 | Láthatóság | Hozzáférés | Példa |
 | --- | --- | --- |
 | Privát | Csak a jegyzet tulajdonosa láthatja. | Személyes ötletek, saját emlékeztetők. |
 | Családdal megosztott | A család tagjai láthatják. | Bevásárlási jegyzet, közös program részletei, háztartási tudnivalók. |
 
-A jegyzet tulajdonosa szabályozza a láthatóságot. A közös szerkesztés jogosultságainak részletei a funkció tervezésekor tisztázandók.
+A jegyzet tulajdonosa szabályozza a láthatóságot, és kizárólag ő szerkeszthet vagy törölhet. Új jegyzet alapból privát. A megosztott jegyzetet a külön `notesMember` hozzáféréssel rendelkező családtagok olvashatják; a Google-belépés és az admin szerepkör önmagában nem ad hozzáférést. A jogosultságot minden szerverművelet friss adatbázis-adat alapján ellenőrzi. Az `/app` jegyzetrésze továbbra is fiktív bemutató, a valódi falhoz vezető hivatkozással a jogosultaknak.
 
 ## Hozzáférés és adatkezelés
 

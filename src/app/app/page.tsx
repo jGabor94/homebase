@@ -1,4 +1,7 @@
 import type { FC } from "react";
+import Link from "next/link";
+import { auth } from "@/features/authentication/lib/auth";
+import { canAccessNotes } from "@/features/notes/lib/access";
 import {
   CalendarDays,
   Droplets,
@@ -57,7 +60,9 @@ const notes = [
 const formatForint = (amount: number) =>
   `${new Intl.NumberFormat("hu-HU").format(amount)} Ft`;
 
-const DashboardPage: FC = () => {
+const DashboardPage: FC = async () => {
+  const session = await auth();
+  const canReadNotes = session?.user?.id ? await canAccessNotes(session.user.id) : false;
   const utilitiesTotal = bills.reduce((total, bill) => total + bill.amount, 0);
   const monthlyTotal = utilitiesTotal + loanPayment;
 
@@ -192,17 +197,15 @@ const DashboardPage: FC = () => {
               <h2 id="notes-heading" className="font-serif text-[30px] font-semibold leading-tight text-foreground">
                 A hűtőajtón
               </h2>
-              <p className="text-sm text-muted-foreground sm:text-base">Közös és saját jegyzeteink</p>
+              <p className="text-sm text-muted-foreground sm:text-base">Közös és saját jegyzetek · bemutató</p>
             </div>
-            <button
-              type="button"
-              disabled
-              title="Jegyzet létrehozása később lesz elérhető."
-              className="inline-flex min-h-11 cursor-not-allowed items-center gap-2 rounded-lg px-2 text-sm font-medium text-accent opacity-75"
+            {canReadNotes && <Link
+              href="/app/notes"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-medium text-accent focus-visible:outline-2 focus-visible:outline-ring"
             >
               <Plus aria-hidden="true" className="size-5" />
-              Új jegyzet
-            </button>
+              Jegyzetfal megnyitása
+            </Link>}
           </div>
 
           <ul className="grid gap-4 md:grid-cols-3">

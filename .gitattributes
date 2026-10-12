@@ -1,0 +1,2 @@
+# Preserve the applied migration's bytes and Drizzle hash across Windows checkouts.
+src/drizzle/migrations/20261012163347_notes-board/migration.sql text eol=lf

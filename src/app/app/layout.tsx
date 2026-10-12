@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth, signOut } from "@/features/authentication/lib/auth";
 import { hasPermission } from "@/features/authorization/utils";
 import AppSidebar from "@/components/app-sidebar";
+import { canAccessNotes } from "@/features/notes/lib/access";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 const AppLayout: FC<Props> = async ({ children }) => {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  const canReadNotes = await canAccessNotes(session.user.id);
 
   return (
     <SidebarProvider>
@@ -19,6 +21,7 @@ const AppLayout: FC<Props> = async ({ children }) => {
         name={session.user.name ?? ""}
         email={session.user.email ?? ""}
         canReadExpenses={hasPermission(session.user, "monthlyExpenses", "read")}
+        canReadNotes={canReadNotes}
         signOutAction={async () => {
           "use server";
           await signOut({ redirectTo: "/" });

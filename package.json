@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:monthly-expenses": "tsx --conditions=react-server --test src/features/monthly-expenses/tests/*.test.ts"
+    "test:monthly-expenses": "tsx --conditions=react-server --test src/features/monthly-expenses/tests/*.test.ts",
+    "test:notes": "tsx --test src/features/notes/tests/*.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",

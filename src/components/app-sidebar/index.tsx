@@ -15,17 +15,18 @@ interface Props {
   name: string;
   email: string;
   canReadExpenses: boolean;
+  canReadNotes: boolean;
   signOutAction: () => Promise<void>;
 }
 
-const AppSidebar: FC<Props> = ({ name, email, canReadExpenses, signOutAction }) => {
+const AppSidebar: FC<Props> = ({ name, email, canReadExpenses, canReadNotes, signOutAction }) => {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
   const closeOnNavigation = () => { if (isMobile) setOpenMobile(false); };
   const items = [
     { title: "Áttekintés", href: "/app", Icon: LayoutDashboard },
     ...(canReadExpenses ? [{ title: "Közművek", href: "/app/monthly-expenses", Icon: ReceiptText }] : []),
-    { title: "Jegyzetek", href: "/app#jegyzetek", Icon: NotebookPen },
+    ...(canReadNotes ? [{ title: "Jegyzetek", href: "/app/notes", Icon: NotebookPen }] : []),
     ...(canReadExpenses ? [{ title: "Beállítások", href: "/app/settings", Icon: Settings }] : []),
   ];
 

@@ -16,5 +16,13 @@ export const ROLES = {
             delete: true,
         }
     },
-    user: {}
+    user: {},
+    notesMember: {
+        notes: {
+            read: true,
+            create: true,
+            update: true,
+            delete: true,
+        },
+    },
 } as const as RolesWithPermissions

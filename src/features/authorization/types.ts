@@ -1,6 +1,6 @@
 import { Session } from "next-auth"
 
-export type Role = "admin" | "user"
+export type Role = "admin" | "user" | "notesMember"
 
 export type PermissionCheck<Key extends keyof Permissions> =
     | boolean
@@ -15,6 +15,10 @@ export type RolesWithPermissions = {
 }
 
 export type Permissions = {
+    notes: {
+        dataType: never
+        action: "read" | "create" | "update" | "delete"
+    },
     monthlyExpenses: {
         dataType: never
         action: "read" | "import"
