@@ -5,14 +5,14 @@ export const SUMMARY_LAYOUT = {
   height: 640,
   margin: 20,
   colors: {
-    cream: "#faf6ee",
-    paper: "#fffdf9",
-    terracotta: "#b5573f",
-    brown: "#42271e",
-    sage: "#edf0dc",
-    muted: "#79685e",
-    line: "#e6d9c9",
-    warning: "#f7e7dc",
+    cream: "#f5f8f9",
+    paper: "#ffffff",
+    terracotta: "#126574",
+    brown: "#0b1628",
+    sage: "#eaf5ef",
+    muted: "#586b85",
+    line: "#e3e9ee",
+    warning: "#fff4df",
   },
 } as const;
 

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { notesTable } from "./drizzle/schema";
-import { noteCardSchema, noteCreateSchema, noteCursorSchema, noteDeleteSchema, noteFormSchema, notePageSchema, noteUpdateSchema } from "./zod/schema";
+import { noteCardSchema, noteCreateSchema, noteCursorSchema, noteDeleteSchema, noteFormSchema, notePageSchema, noteQuerySchema, noteUpdateSchema } from "./zod/schema";
 
 export type InsertNote = typeof notesTable.$inferInsert;
 export type SelectNote = typeof notesTable.$inferSelect;
@@ -9,6 +9,8 @@ export type NoteCreateInput = z.infer<typeof noteCreateSchema>;
 export type NoteUpdateInput = z.infer<typeof noteUpdateSchema>;
 export type NoteDeleteInput = z.infer<typeof noteDeleteSchema>;
 export type NoteCursorInput = z.infer<typeof noteCursorSchema>;
+export type NoteQueryInput = z.input<typeof noteQuerySchema>;
+export type NoteQuery = z.output<typeof noteQuerySchema>;
 export type NoteCard = z.infer<typeof noteCardSchema>;
 export type NotePage = z.infer<typeof notePageSchema>;
 export type NoteList = Awaited<ReturnType<typeof import("./drizzle/operations").getNotesPage>>;

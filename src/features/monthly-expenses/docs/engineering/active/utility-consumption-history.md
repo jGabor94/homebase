@@ -4,7 +4,7 @@
 
 A `/app/monthly-expenses` Közművek oldal elsődleges kezdőnézete egyetlen közös diagram. Víz, gáz, villany, hulladék és egyéb számla között lehet váltani, külön kapcsoló választja a **Fogyasztás** vagy **Költség** nézetet. A diagram alatt megmarad a mentett kimutatások listája és az aktuális hónap indítása. Megnyitáskor a meglévő részletnézetben szerkeszthetők a számlák; visszalépéskor ismét a diagram és a lista látszik.
 
-A diagram a legutóbbi 12 mentett kimutatási hónapot mutatja időrendben, kizárólag valódi mentett adatokból. A hónap az elszámolási hónap, nem a számlán szereplő fogyasztási időszak. Az egyedi tételek és a sablonmásolatok nem közműszámlák, ezért nem kerülnek bele. Mentés és törlés után a helyi diagram azonnal követi a mentett állapotot; nem mentett módosítás nem változtatja meg.
+A redesign diagramja alapból 6, választhatóan 12 naptári hónapot mutat időrendben a Budapest szerinti aktuális hónapig, kizárólag valódi mentett adatokból. A hónap az elszámolási hónap, nem a számlán szereplő fogyasztási időszak. Az egyedi tételek és a sablonmásolatok nem közműszámlák, ezért nem kerülnek bele. Mentés és törlés után a helyi diagram azonnal követi a mentett állapotot; nem mentett módosítás nem változtatja meg.
 
 ## Fogyasztási adatok
 
@@ -35,3 +35,7 @@ A célzott, újrafuttatható frissítés: `npx tsx src/features/monthly-expenses
 - Bizonyítékra épülő import; hiányzó és többértelmű fogyasztás nem becsült érték.
 - Egységek elkülönítése, részleges adatok és üres/hibás betöltés jelzése.
 - A korábbi kimutatásszerkesztés, mentés, törlés és export működése megmarad.
+
+## Redesign, 2026-10-12
+
+A közmű- és metrikaváltó, időablak, KPI és diagram közös helyi kiválasztásból működik. A KPI-panel és az SVG diagram desktopon két oszlop, mobilon egymás alatt. A backend csak az aktuális 12 naptári hónap számláit olvassa ehhez. Hiányzó hónap nem nulla; az átlag ismert hónapokra vonatkozik, a lefedettség és kizárt tételek jelzettek. A kategóriaáttekintés külön a lekért 12 hónap ismert költségeit összegzi, ezt a felirata jelöli.

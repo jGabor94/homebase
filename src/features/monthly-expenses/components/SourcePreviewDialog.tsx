@@ -69,10 +69,10 @@ const SourcePreviewDialog: FC<SourcePreviewDialogProps> = ({ source, uploadPrevi
   }, [onClose]);
 
   return (
-    <dialog ref={dialogRef} aria-labelledby="source-preview-title" onCancel={onClose} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }} className="m-0 h-[94dvh] w-screen max-h-none max-w-none flex-col overflow-hidden border border-border bg-card p-0 text-foreground shadow-xl backdrop:bg-foreground/45 open:flex sm:m-auto sm:h-[85vh] sm:w-[min(calc(100vw-3rem),64rem)] sm:max-h-[90vh] sm:rounded-2xl">
-        <header className="flex items-center justify-between gap-4 border-b border-border px-5 py-4">
+    <dialog ref={dialogRef} aria-labelledby="source-preview-title" onCancel={onClose} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }} className="m-0 h-[94dvh] w-screen max-h-none max-w-none flex-col overflow-hidden border border-border bg-card p-0 text-foreground shadow-xl backdrop:bg-foreground/45 open:flex sm:m-auto sm:h-[85vh] sm:w-[min(calc(100vw-3rem),64rem)] sm:max-h-[90vh] sm:rounded-[22px]">
+        <header className="flex items-center justify-between gap-4 border-b border-border px-4 py-4 sm:px-5">
           <div className="min-w-0">
-            <h2 id="source-preview-title" className="truncate font-serif text-xl font-semibold text-foreground">Számla forrása</h2>
+            <h2 id="source-preview-title" className="truncate text-xl font-semibold tracking-tight text-foreground">Számla forrása</h2>
             <p className="mt-0.5 truncate text-sm text-muted-foreground">{source.fileName}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">

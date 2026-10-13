@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import Link from "next/link";
-import { House } from "lucide-react";
+import Image from "next/image";
+import Brand from "@/components/Brand";
 import { auth, signIn } from "@/features/authentication/lib/auth";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
@@ -38,13 +39,12 @@ const Login: FC<LoginProps> = async ({ searchParams }) => {
   const loginError = getLoginErrorMessage(error);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col justify-center gap-6 px-6 py-12">
-      <Link href="/" className="flex min-h-11 items-center gap-2 text-2xl font-semibold">
-        <House aria-hidden className="size-7 text-primary" /> homebase
-      </Link>
-      <section className="rounded-2xl border border-border bg-card p-7 shadow-sm">
-        <h1 className="font-serif text-4xl">Jó, hogy itt vagy.</h1>
-        <p className="mt-3 text-muted-foreground">A családi kiadásokhoz jelentkezz be a saját Google-fiókoddal.</p>
+    <main className="mx-auto flex min-h-svh w-full max-w-lg flex-col justify-center gap-6 px-6 py-12">
+      <Link href="/" className="mx-auto flex min-h-11 rounded-lg focus-visible:outline-2 focus-visible:outline-ring"><Brand /></Link>
+      <Image src="/images/homebase/home-wide.webp" alt="" width={1800} height={600} sizes="450px" className="-mb-8 h-auto w-full" />
+      <section className="relative rounded-[24px] border bg-card p-7 shadow-[0_12px_40px_rgba(16,37,45,0.06)]">
+        <h1 className="text-4xl font-bold tracking-tight">Jó, hogy itt vagy.</h1>
+        <p className="mt-3 leading-relaxed text-muted-foreground">A család közös teréhez jelentkezz be a saját Google-fiókoddal.</p>
         {loginError ? (
           <p role="alert" className="mt-5 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
             {loginError}

@@ -6,7 +6,7 @@ Végrehajtás: [implementációs terv](../../implementation/active/notes-board.m
 
 ## Cél
 
-Gyorsan írható és visszaolvasható szöveges jegyzetek egy otthonos, papírcetlikből álló üzenőfalon. Ugyanazon a felületen jelenjenek meg a felhasználó saját privát jegyzetei és a család közös olvasásra megosztott jegyzetei.
+Gyorsan írható és visszaolvasható szöveges jegyzetek egy otthonos, pasztell kártyákból álló üzenőfalon. Ugyanazon a felületen jelenjenek meg a felhasználó saját privát jegyzetei és a család közös olvasásra megosztott jegyzetei.
 
 ## Jegyzet életciklusa
 
@@ -54,7 +54,7 @@ A szerver validálja a tartalmat és a láthatóságot is. A megjelenített elő
 
 Kanonikus útvonal: `/app/notes`, a meglévő app shellben. Az oldal címe **Jegyzetek**, rövid kísérőszövege **A saját és közös cetlijeink.** Felül **Új jegyzet**, alatta a cetlikből álló reszponzív rács. Alapértelmezett sorrend: `updatedAt` csökkenő, azonos időpontnál `id` szerinti stabil rendezés. Mentés után a módosított cetli előre kerül.
 
-A felület a [.agents/DESIGN.md](../../../../../../.agents/DESIGN.md) meleg témáját használja. A cetlik `note-yellow`, `note-peach`, `note-sage` tokeneket kapnak, stabilan a jegyzetazonosítóhoz rendelve. A szín dekoráció, nem láthatóságjelölő, és az első változatban nem felhasználói beállítás. A papírhatás HTML/CSS-elemekből készül finom kerettel, árnyékkal és egy kis ragasztószalag-motívummal; nincs szükség raster háttérképre, olvashatóságot rontó textúrára vagy erős elforgatásra.
+A felület a [.agents/DESIGN.md](../../../../../../.agents/DESIGN.md) új világos/petrol témáját használja; a redesign megjelenési követelményei felülírják az alábbi korábbi papírcetli-részleteket. A cetlik `note-yellow`, `note-peach`, `note-sage` tokeneket kapnak, stabilan a jegyzetazonosítóhoz rendelve. A szín dekoráció, nem láthatóságjelölő, és az első változatban nem felhasználói beállítás. A pasztell kártyák finom kerettel és árnyékkal jelennek meg; nincs ragasztószalag, raster kártyaháttér vagy elforgatás.
 
 A cetlin cím, formázott rövid előnézet, szerző megjelenített neve, módosítási idő és szöveges láthatóságjelölés látszik. A dátum magyar formátumban, Europe/Budapest időzónában jelenik meg. A teljes szöveg megnyitással olvasható; hosszú szavak törjenek, a kártya ne növessze túl a képernyőt. Mobilon egy, nagyobb képernyőn két-három oszlop; a DOM- és olvasási sorrend kövesse a rendezést.
 
@@ -92,7 +92,7 @@ A kliens részletmegnyitását és további lapbetöltését `loadNote`/`loadNot
 
 A mentetlen szerkesztés modálbezáráskor megerősítést, böngészőfrissítés vagy lapelhagyás előtt `beforeunload` figyelmeztetést kap. A böngésző SPA-visszalépésének teljes blokkolása nincs implementálva; az élő navigációs elfogadási próba még nyitott.
 
-A sidebar Jegyzetek pontját az új route-ra kell átvezetni, megfelelő jogosultsági megjelenítéssel. Az `/app` mock jegyzeteinek cseréje nem része az első változatnak: a bemutató továbbra is egyértelműen mintaként szerepeljen, és a valódi jegyzetkezeléshez irányítson. A publikus landing kizárólag fiktív cetliket mutathat.
+A sidebar Jegyzetek pontját az új route-ra kell átvezetni, megfelelő jogosultsági megjelenítéssel. A redesign óta az `/app` a legutóbbi valódi, jogosultan olvasható jegyzeteket mutatja. A publikus landing kizárólag fiktív cetliket mutathat.
 
 ## Elfogadási feltételek
 
@@ -101,7 +101,13 @@ A sidebar Jegyzetek pontját az új route-ra kell átvezetni, megfelelő jogosul
 - A privát alapérték és a láthatóságváltás működik; mások privát jegyzete nem olvasható azonosító ismeretében sem.
 - A megosztott jegyzetet más családtag olvashatja, de közvetlen Server Action hívással sem módosíthatja vagy törölheti.
 - Nem családtag Google-felhasználó és visszavont tagság nem ad hozzáférést; admin sem olvashat más privát jegyzetébe.
-- A fal reszponzív, papírcetli hatású és billentyűzettel használható. Betöltés, üres fal, hiba és nem mentett változás kezelve van.
+- A fal reszponzív, pasztell kártyás és billentyűzettel használható. Betöltés, üres fal, hiba és nem mentett változás kezelve van.
 - Párhuzamos szerkesztés nem írja felül csendben a frissebb tartalmat; a lapozás nem ad ki tiltott adatot.
 
-Nem része az első változatnak: közös szerkesztés, élő frissítés, drag-and-drop, rögzítés, keresés, címkézés, verziótörténet, melléklet, e-mail, értesítés, export vagy nyilvános link.
+Nem része az első változatnak: közös szerkesztés, élő frissítés, drag-and-drop, rögzítés, címkézés, verziótörténet, melléklet, e-mail, értesítés, export vagy nyilvános link.
+
+## Alkalmazásszintű redesign, 2026-10-12
+
+A korábbi ragasztószalagos papírhatás helyett stabil azonosítóhoz rendelt pasztell kártyák, külön láthatóságbadge, szerzőmonogram és módosítási dátum szerepel. A notes oldal keresést, Összes/Privát/Megosztott szűrést, Legutóbbi/Legrégebbi/Cím szerinti rendezést és rács/lista kapcsolót kapott. A keresés és számlálók a teljes jogosultan elérhető halmazból készülnek; a lapozás továbbra is 30 soros, a kurzor rendezési típust és címsorrendnél title értéket is őriz. Más rendezéshez tartozó kurzor elutasítva.
+
+A szerkesztő desktopon széles, kétoszlopos dialog; mobilon teljes képernyő, görgethető tartalommal és külön alsó műveletsávval. Az Előnézet ugyanazt a biztonságos NoteContent renderelőt használja. A 120/5000 karakteres korlát, privát alapérték, tulajdonosi szerkesztés és verzióütközés-kezelés megmarad. A ?new=1 új szerkesztőt, a ?note=UUID hitelesítetten betöltött részletet nyit. A dashboard már valódi, ugyanazon DAL-szűréssel olvasott jegyzeteket mutat. Címkék, emlékeztetők, képek és checklist továbbra is külön tervezett bővítések.

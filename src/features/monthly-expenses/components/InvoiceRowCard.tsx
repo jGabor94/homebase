@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FC } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
-import { Check, ChevronDown, FileText, Trash2 } from "lucide-react";
+import { Check, ChevronDown, Droplets, FileText, Flame, MoreHorizontal, Trash2, Zap } from "lucide-react";
 import toast from "react-hot-toast";
 import { CONSUMPTION_UNITS, INVOICE_CATEGORIES, INVOICE_CATEGORY_LABELS, INVOICE_ISSUE_LABELS } from "../config";
 import type { InvoiceField, InvoiceReportInput, InvoiceRowInput } from "../types";
@@ -37,6 +37,29 @@ const evidenceFieldLabels: Record<string, string> = {
   issuedAt: "Számla kelte",
   consumptionQuantity: "Fogyasztási mennyiség",
   consumptionUnit: "Fogyasztási egység",
+};
+
+const categoryTone: Record<InvoiceRowInput["category"], string> = {
+  water: "border-sky-200 bg-sky-50/70",
+  gas: "border-rose-200 bg-rose-50/70",
+  electricity: "border-amber-200 bg-amber-50/70",
+  waste: "border-emerald-200 bg-emerald-50/70",
+  other: "border-slate-200 bg-slate-50/80",
+};
+
+const categoryIcon = {
+  water: Droplets,
+  gas: Flame,
+  electricity: Zap,
+  waste: Trash2,
+  other: MoreHorizontal,
+} as const;
+
+const documentTypeLabel: Record<NonNullable<InvoiceRowInput["documentType"]>, string> = {
+  invoice: "Normál számla",
+  credit: "Jóváírás",
+  correction: "Helyesbítő",
+  cancellation: "Sztornó",
 };
 
 const formatConflictValue = (field: string, value: string | null) => {
@@ -155,26 +178,37 @@ const InvoiceRowCard: FC<InvoiceRowCardProps> = ({ index, onRemove, onPreview })
   const fieldClass = "mt-1 min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring";
   const labelClass = "block text-sm font-medium text-foreground";
   const sourceLabels = [...new Set(invoice.sources.map((source) => source.fileName))];
+  const CategoryIcon = categoryIcon[invoice.category];
+  const amountSummary = invoice.amountMinor === null
+    ? "Összeg nincs megadva"
+    : invoice.currency === "HUF"
+      ? `${formatMinorAsHuf(invoice.amountMinor)} Ft`
+      : invoice.currency
+        ? `${formatMinorAsHuf(invoice.amountMinor)} ${invoice.currency}`
+        : `${formatMinorAsHuf(invoice.amountMinor)} · pénznem hiányzik`;
 
   return (
-    <article className="rounded-2xl border border-border bg-card p-4 sm:p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-serif text-xl font-semibold text-foreground">
-              {invoice.providerName || "Új számlasor"}
-            </h3>
-            <span className={`rounded-full px-3 py-1 text-xs font-medium ${invoice.reviewStatus === "reviewed" && invoice.issues.length === 0 ? "bg-accent/15 text-foreground" : "bg-note-yellow text-foreground"}`}>
-              {invoice.reviewStatus === "reviewed" && invoice.issues.length === 0 ? "Ellenőrizve" : "Átnézendő"}
+    <article className={`overflow-hidden rounded-[20px] border shadow-sm ${categoryTone[invoice.category]}`}>
+      <header className="flex flex-wrap items-start gap-3 border-b border-black/5 bg-white/65 p-4 sm:items-center sm:p-5">
+        <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/85 text-foreground shadow-sm"><CategoryIcon aria-hidden="true" className="size-6" /></span>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{INVOICE_CATEGORY_LABELS[invoice.category]} <span aria-hidden="true">·</span> {invoice.documentType ? documentTypeLabel[invoice.documentType] : "Számlatípus nincs megadva"}</p>
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h3 className="min-w-0 break-words text-lg font-semibold tracking-tight text-foreground">{invoice.providerName.trim() || "Új számlasor"}</h3>
+            <span className="text-base font-semibold tabular-nums text-foreground">{amountSummary}</span>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span className="rounded-full bg-white/75 px-2.5 py-1">{invoice.invoiceNumber?.trim() || "Számlaszám hiányzik"}</span>
+            <span className="rounded-full bg-white/75 px-2.5 py-1">{invoice.dueDate ? `Határidő: ${invoice.dueDate}` : "Határidő nincs megadva"}</span>
+            <span className={`rounded-full px-2.5 py-1 font-medium ${invoice.reviewStatus === "reviewed" && invoice.issues.length === 0 ? "bg-emerald-100 text-emerald-800" : invoice.issues.length ? "bg-amber-100 text-amber-900" : "bg-white/85 text-slate-700"}`}>
+              {invoice.reviewStatus === "reviewed" && invoice.issues.length === 0 ? "Ellenőrizve" : invoice.issues.length ? `Ellenőrzésre vár · ${invoice.issues.length} jelzés` : invoice.sources.length ? "Beolvasva · ellenőrizendő" : "Szerkesztés alatt"}
             </span>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {sourceLabels.length ? `Forrás: ${sourceLabels.join(", ")}` : "Kézzel felvitt számla"}
-          </p>
+          <p className="mt-2 break-all text-xs text-muted-foreground">{sourceLabels.length ? `Forrás: ${sourceLabels.join(", ")}` : "Kézzel felvitt számla"}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:max-w-full">
           {invoice.sources.map((source, sourceIndex) => (
-            <button key={`${source.kind}-${source.kind === "upload" ? source.documentId : source.messageId}-${sourceIndex}`} type="button" onClick={() => onPreview(source)} className="inline-flex min-h-11 max-w-48 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium hover:bg-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+            <button key={`${source.kind}-${source.kind === "upload" ? source.documentId : source.messageId}-${sourceIndex}`} type="button" onClick={() => onPreview(source)} className="inline-flex min-h-11 min-w-0 max-w-48 flex-1 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium hover:bg-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
               <FileText aria-hidden="true" className="size-4 shrink-0 text-primary" /><span className="truncate">{source.fileName}</span>
             </button>
           ))}
@@ -182,8 +216,9 @@ const InvoiceRowCard: FC<InvoiceRowCardProps> = ({ index, onRemove, onPreview })
             <Trash2 aria-hidden="true" className="size-5" />
           </button>
         </div>
-      </div>
+      </header>
 
+      <div className="bg-white/45 p-4 sm:p-5">
       {invoice.issues.length > 0 && (
         <ul className="mt-3 space-y-2 rounded-xl bg-note-yellow/70 p-3 text-sm text-foreground" aria-label="Ellenőrzési jelzések">
           {invoice.issues.map((issue) => <li key={issue}>
@@ -356,6 +391,7 @@ const InvoiceRowCard: FC<InvoiceRowCardProps> = ({ index, onRemove, onPreview })
           <Check aria-hidden="true" className="size-4" /> Átnéztem ezt a számlát
         </button>
       )}
+      </div>
     </article>
   );
 };

@@ -1,57 +1,33 @@
 # Homebase design
 
-## Irány és referencia
+Frissítve: 2026-10-12. Az aktuális design a .agents/app-design 11 desktop- és mobilreferenciájából készült. Részletes követelmények és referencia-hozzárendelések: [alkalmazásszintű redesign](../src/docs/engineering/active/app-redesign.md).
 
-A Homebase privát családi tér: barátságos, otthonos és nyugodt, nem vállalati dashboard. Az /app áttekintés vizuális referenciája az `output/imagegen/homebase-dashboard-v2.png` kép. A felület valódi HTML-elemekből épül, nem a képből készült háttér.
+## Vizuális rendszer
 
-Minimalista csempés elrendezés, jól olvasható tartalom, sok levegő. Kerülendők a gradiensek, glassmorphism, neon/lila hangsúlyok, túlzott animációk, marketingblokkok és dekorációs zsúfoltság.
+Világos, nyugodt családi alkalmazás petrol navigációval, erős Geist sans címekkel, pasztell funkciókártyákkal és külön otthonillusztrációkkal. A korábbi krém–barna–olíva és Georgia téma lecserélve.
 
-## Színek és téma
+- Vászon #f7f9fa, panel #ffffff, fő szöveg #0b1628, másodlagos #586b85, határ #e3e9ee.
+- Petrol primary #126574, meleg hangsúlyos művelet #b34330, sötét sidebar #10252d, aktív menü #194b55.
+- Víz: kék, gáz: korall, villany: sárga, hulladék: zöld; a szín mellett ikon/felirat is szerepel.
+- Szemantikus shadcn változók és Tailwind v4 theme mapping a src/app/globals.css fájlban; JSX utility classok az oldalakban és komponensekben.
+- Sans oldalcím 32–60 px, panelcím 18–24 px, törzsszöveg 15–16 px; tabular pénzösszegek magyar formátumban.
+- Panelek 18–24 px lekerekítéssel, finom kerettel és árnyékkal; 16–24 px belső/rácstérköz.
+- Enyhe petrol gradient és illusztrált háttér megengedett, glassmorphism és túlzott animáció nem szükséges.
 
-| Token | Érték | Szerep |
-| --- | --- | --- |
-| background | #faf6ee | Meleg krém oldalháttér |
-| foreground | #42271e | Sötétbarna fő szöveg |
-| card | #fffcf7 | Elefántcsont csempe |
-| muted-foreground | #796d61 | Másodlagos szöveg |
-| border | #e9dfd1 | Finom meleg keretek |
-| primary | #b5573f | Terrakotta elsődleges művelet |
-| primary-foreground | #ffffff | Gombfelirat |
-| accent | #78815c | Olívazöld diagram és navigáció |
-| note-yellow | #fff4d6 | Bevásárlási jegyzet |
-| note-peach | #fce9dd | Családi programjegyzet |
-| note-sage | #edf0dc | Személyes jegyzet |
+## Navigáció és oldalak
 
-A globális CSS-ben shadcn-kompatibilis szemantikus változók és Tailwind v4 `@theme inline` mapping legyen. Elsőként egységes világos téma készül; az operációs rendszer sötét módja nem változtatja meg automatikusan a képen jóváhagyott megjelenést.
+1024 px-től közös sötét shadcn sidebar, világos felső kereső/dátum/profil sáv. Kisebb képernyőn logó/kereső/profil fejléc és fix, jogosultságszűrt alsó navigáció, safe-area-val. Menüpontok és aktív URL-logika egy közös definícióból származnak. Kijelentkezés mobilon a profilmenüből is elérhető.
 
-## Tipográfia és felületek
+A landing statikus, osztott hero és HTML-alapú fiktív appelőnézet; mobilon egymás alatti elemek. A login csak Google-belépés. A dashboard valódi mentett közműadatokat, ismert határidőket és jogosultan olvasható jegyzeteket mutat. A hiányzó adat nem nulla, a fizetési határidő nem fizetettség.
 
-- Törzsszöveg: a meglévő Geist sans betűcsalád; címek: visszafogott Georgia serif, amely magyar ékezeteket is megjelenít, új fontletöltés nélkül.
-- A főcím nagy, de nem marketing-hero: „Jó itthon.”, alatta „Számlák, tervek és minden, ami közös.”
-- Csempecímek 26–30 px, törzsszöveg 15–16 px, másodlagos címkék 12–14 px. Mobilon a főcím kisebb.
-- Csempesarkok 18–20 px, egy pixeles keret, nagyon finom meleg árnyék. Gombok és címkék kisebb lekerekítést kapnak.
-- Tartalomszélesség legfeljebb 1280 px, csempék között 20–24 px. Desktopon 24–28 px belső tér, mobilon 20 px.
-- Lucide vonalas ikonok. A házikó a márkajel része, egy apró nap a köszöntésnél az egyetlen hangsúlyos dekoráció.
+Közművek: kategória/metrika/6–12 hónap választó, KPI és diagram, mentett hónaplista; külön havi szerkesztő, számlakártyák és összegzés. Mobilon az egész összegző panel nem rögzített: rövid alsó műveletsáv nyitja meg és kínál mentést.
 
-## Publikus és hitelesített felület
+Jegyzetek: illusztrált fejléc, valódi teljeshalmaz-keresés/szűrés/rendezés/count, grid/lista, stabil pasztell kártyák. 480 px alatt olvasható egyoszlopos rács. Desktopon széles, kétoszlopos szerkesztő; mobilon teljes képernyő, külön görgethető tartalommal és mentési sávval. A privát/családi jelölés külön felirat, nem kártyaszín.
 
-A `/` publikus landing rövid bemutatkozást és belépési hivatkozást tartalmaz. A `/login` kizárólag Google-belépést kínál. A dashboard és a feature-oldalak az `/app` alatt közös shadcn Sidebar layoutot használnak. A sidebar Radix / new-york alapú, az eredeti meleg téma sidebar tokenjeivel. Desktopon oldalsáv, mobilon fókuszkezelt nyitható panel működik. Részletek: [routing és auth](../src/docs/engineering/active/app-routing-auth-sidebar.md).
+## Működés és hozzáférhetőség
 
-## App áttekintés
+A felület valódi HTML; a referencia screenshot nem helyettesít formot, diagramot vagy navigációt. Az eredeti képek személyes adatai nem kerülnek publikus assetbe. Az illusztrációs források: [assetjegyzék](../src/docs/engineering/active/app-redesign-assets.md).
 
-1. Közös sidebar: homebase márkajel, Áttekintés / Közművek / Jegyzetek / Beállítások navigáció, valós session-profil és kijelentkezés. A közművek és beállítások a meglévő jogosultság szerint látszanak. A tartalom felett navigációkapcsoló és rövid kísérőszöveg van; az oldalaknak nincs külön menüjük.
-2. Köszöntés és a bemutatott hónap: 2026. szeptember.
-3. Desktopon két oszlop: kb. 58% „A havi közös”, 42% „Így alakult a rezsi”. Tablet és mobil méreten a panelek egymás alá kerülnek.
-4. Számlák: gáz 12 400 Ft, villany 18 600 Ft, víz 8 200 Ft, hulladék 4 800 Ft; közművek összesen 44 000 Ft. Hitel 81 000 Ft. Teljes összeg 125 000 Ft, utalandó fele 62 500 Ft. A generált kép 124 000 / 62 000 Ft összege számtani hiba, a megvalósítás a tételekből számolja a helyes összeget.
-5. Hat havi egyszerű olívazöld oszlopdiagram, hitel nélkül. A tengely 0–80 000 Ft, a szeptemberi oszlop 44 000 Ft. Hozzáférhető szöveges megfelelő szükséges.
-6. „A hűtőajtón” jegyzetrész, „Közös és saját jegyzeteink” alcímmel. Desktopon három csempe, kisebb képernyőkön egymás alatt: Bevásárlás (családi), Hétvégi program (családi), Ötletek (privát).
+Magyar dokumentumnyelv, egy h1, szemantikus nav/main/section, skip link, billentyűzetes vezérlés és látható fókusz. Interaktív célterület legalább 44 px. Dialogok fókuszkezeléssel; diagramok szöveges adattáblával. Mobil alsó nav és műveletsáv nem takarhat mezőt. Csökkentett mozgás mellett statikus megjelenés.
 
-## Mock működés és hozzáférhetőség
-
-- Az /app áttekintés kizárólag fiktív mintaadatokat használ. Ezt egy visszafogott rövid megjegyzés jelzi.
-- A navigáció létező oldalszakaszokhoz vezet. Még nem megvalósított művelet nem tettetheti az adatmentést vagy levélküldést; a bemutató műveletek legyenek egyértelműen letiltva vagy helyi, működő előnézetet nyissanak.
-- Az áttekintés továbbra is bemutató: valódi jegyzetszerkesztés és hónapváltás nincs. Az alkalmazás hitelesítését és a közműfeature külön működését a saját aktuális dokumentumaik írják le.
-- Magyar dokumentumnyelv, szemantikus fejléc/nav/main/section, egy h1, következetes címsorhierarchia.
-- A privát/családi állapot szöveggel és ikonnal is jelenjen meg. Dekorációs ikonok ne kerüljenek a képernyőolvasó felolvasásába.
-- Billentyűzettel használható navigáció, látható fókusz, legalább 44 px interaktív célpontok, elegendő kontraszt, vízszintes oldalgörgetés nélkül.
-- Stílusok a JSX Tailwind utility osztályaiban; globális CSS kizárólag a témához és alapbeállításokhoz. Ne kerüljön be nagy diagramkönyvtár egy statikus mock diagram miatt.
+Keresés, dashboard és feature UI megtartja a DAL-jogosultságvédelmet. A mentetlen szerkesztés eldobása megerősítést kér a belső navigáció során. A címkék, emlékeztetők, képcsatolás és értesítések külön tervezett bővítések; működésük nélkül vezérlő vagy piros harangbadge nem jelenik meg.

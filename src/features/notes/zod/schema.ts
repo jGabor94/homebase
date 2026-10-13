@@ -35,7 +35,15 @@ export const noteIdSchema = z.string().uuid({ message: "Érvénytelen jegyzetazo
 export const noteCursorSchema = z.object({
   updatedAt: z.string().datetime({ message: "Érvénytelen lapozási időpont." }),
   id: noteIdSchema,
+  sort: z.enum(["latest", "oldest", "title"]).optional(),
+  title: z.string().nullable().optional(),
 }).nullable();
+export const noteQuerySchema = z.object({
+  query: z.string().trim().max(120, { message: "A keresés legfeljebb 120 karakter lehet." }).optional(),
+  search: z.string().trim().max(120, { message: "A keresés legfeljebb 120 karakter lehet." }).optional(),
+  filter: z.enum(["all", "private", "family"]).default("all"),
+  sort: z.enum(["latest", "oldest", "title"]).default("latest"),
+}).transform(({ query, search, ...options }) => ({ query: search ?? query ?? "", ...options }));
 export const noteCardSchema = z.object({
   id: noteIdSchema,
   ownerId: z.string().min(1),
@@ -50,4 +58,5 @@ export const noteCardSchema = z.object({
 export const notePageSchema = z.object({
   notes: z.array(noteCardSchema),
   nextCursor: noteCursorSchema,
+  counts: z.object({ all: z.number().int().nonnegative(), private: z.number().int().nonnegative(), family: z.number().int().nonnegative() }),
 });

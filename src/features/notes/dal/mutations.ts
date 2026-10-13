@@ -103,9 +103,12 @@ export async function loadNote(id: string) {
   return getNote(id);
 }
 
-export async function loadNotesPage(cursor: import("../types").NoteCursorInput = null) {
+export async function loadNotesPage(
+  cursor: import("../types").NoteCursorInput = null,
+  query: Partial<import("../types").NoteQueryInput> = {},
+) {
   const { getNotesPage } = await import("./queries");
-  return getNotesPage(cursor);
+  return getNotesPage(cursor, query);
 }
 
 export const createNote = async (input: NoteCreateInput): Promise<NoteActionResult<NoteCard>> => {

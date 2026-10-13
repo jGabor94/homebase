@@ -3,8 +3,8 @@
 import { useState, type FC } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { RefreshCw, Trash2 } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
+import { Plus, RefreshCw, Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
 import { createExpensePreset, deleteExpensePreset, loadExpensePresets, updateExpensePreset } from "../dal/presets";
 import type { ExpensePresetDto, ExpensePresetFormInput } from "../types";
 import { formatMinorAsHuf, parseHungarianAmountToMinor } from "../utils/money";
@@ -124,10 +124,9 @@ const PresetSettingsForm: FC<PresetSettingsFormProps> = ({ initialPresets, initi
 
   return (
     <>
-      <Toaster position="bottom-center" toastOptions={{ duration: 4500, style: { background: "#fffcf7", color: "#42271e", border: "1px solid #e9dfd1" } }} />
       <div className="grid gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <section className="h-fit rounded-[20px] border border-border bg-card p-5 shadow-[0_8px_24px_rgba(91,61,36,0.06)] sm:p-7" aria-labelledby="preset-form-heading">
-          <h2 id="preset-form-heading" className="font-serif text-2xl font-semibold text-foreground">{editingId ? "Közös tétel szerkesztése" : "Új közös tétel"}</h2>
+        <section className="h-fit rounded-[22px] border border-border bg-card p-5 shadow-sm sm:p-7" aria-labelledby="preset-form-heading">
+          <div className="mb-5 flex items-center gap-3"><span aria-hidden="true" className="grid size-10 place-items-center rounded-xl bg-sky-50 text-primary"><Plus className="size-5" /></span><div><h2 id="preset-form-heading" className="text-xl font-semibold tracking-tight text-foreground">{editingId ? "Közös tétel szerkesztése" : "Új közös tétel"}</h2><p className="text-sm text-muted-foreground">Közösen használt havi sablon</p></div></div>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">A sablon közös; módosítása nem írja át a már felvett havi tételeket.</p>
           {errorMessage && <p role="alert" className="mt-4 rounded-xl border border-primary/25 bg-note-peach/60 p-3 text-sm text-foreground">{errorMessage}</p>}
           <form noValidate onSubmit={savePreset} className="mt-5">
@@ -189,9 +188,9 @@ const PresetSettingsForm: FC<PresetSettingsFormProps> = ({ initialPresets, initi
           </form>
         </section>
 
-        <section className="rounded-[20px] border border-border bg-card p-5 shadow-[0_8px_24px_rgba(91,61,36,0.06)] sm:p-7" aria-labelledby="preset-list-heading">
+        <section className="rounded-[22px] border border-border bg-card p-5 shadow-sm sm:p-7" aria-labelledby="preset-list-heading">
           <div className="flex items-center justify-between gap-3">
-            <h2 id="preset-list-heading" className="font-serif text-2xl font-semibold text-foreground">Közös sablonok</h2>
+            <h2 id="preset-list-heading" className="text-xl font-semibold tracking-tight text-foreground">Mentett közös tételek</h2>
             <button type="button" onClick={() => void refreshPresets()} disabled={busy} aria-label="Mentett tételek frissítése" title="Mentett tételek frissítése" className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-ring">
               <RefreshCw aria-hidden="true" className={`size-4 ${refreshing ? "animate-spin" : ""}`} />
             </button>

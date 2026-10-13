@@ -12,7 +12,7 @@ A publikus bemutatkozás, a bejelentkezés és a hitelesített alkalmazás kül�
 | --- | --- | --- | --- |
 | `/` | Megtekinthető | Megtekinthető, nincs automatikus átirányítás | Publikus landing |
 | `/login` | Megtekinthető | Átirányítás `/app` címre | Kizárólag Google-belépés |
-| `/app` | Átirányítás `/login` címre | Megtekinthető | Áttekintés, közös sidebar |
+| `/app` | Átirányítás `/login` címre | Megtekinthető | Valódi áttekintés, közös navigáció |
 | `/app/*` | Átirányítás `/login` címre | A feature jogosultságai szerint | Közös app layout |
 | `/monthly-expenses` | Átirányítás az új címre, majd login | Átirányítás `/app/monthly-expenses` címre | Régi cím kompatibilitása |
 | `/settings` | Átirányítás az új címre, majd login | Átirányítás `/app/settings` címre | Régi cím kompatibilitása |
@@ -75,9 +75,9 @@ A normál bejelentkezés csak az identitáshoz szükséges Google scope-okat has
 - Az app shell valódi shadcn Sidebar komponensekből épül, egyetlen `SidebarProvider` alatt. A tartalom és a mobil nyitógomb az `/app` layoutban kap helyet. Az interaktív sidebar kis klienskomponens, a layout és az oldalak alapértelmezetten szerverkomponensek.
 - Menüpontok: Áttekintés `/app`; Közművek `/app/monthly-expenses`; Beállítások `/app/settings`. A két utóbbi csak a meglévő read jogosultsággal látszik. A 2026-10-12-én implementált Jegyzetek menüpont `/app/notes` címre mutat, friss adatbázis-adatból ellenőrzött notes hozzáféréssel. A részletes hozzáférési és bevezetési szabályokat a [notes specifikációja](../../../features/notes/docs/engineering/active/notes-board.md) írja le.
 - Az aktív Áttekintés csak pontos `/app` egyezésnél aktív; a többi oldal szegmenshatárral illeszkedik. A Jegyzetek szakaszlink nem kap hamis oldalaktív állapotot.
-- Desktopon oldalsáv, mobilon a shadcn által biztosított nyitható panel működik, feliratozott triggerrel, billentyűzetes vezérléssel, fókuszkezeléssel és bezárással. A navigáció `next/link` hivatkozásokat használ.
+- A redesign óta 1024 px-től shadcn oldalsáv, kisebb képernyőn jogosultságszűrt alsó navigáció és profilmenü működik, billentyűzetes vezérléssel és safe-area-val. A navigáció `next/link` hivatkozásokat használ.
 - A sidebar footerében a sessionből származó név/e-mail és kijelentkezés szerepel; OAuth token vagy teljes sessionobjektum nem kerül klienspropba. Kijelentkezés után a cél `/`.
-- A meglévő meleg krém, terrakotta és olíva téma marad. A szükséges sidebar tokenek ehhez igazodnak, a shadcn inicializálás nem írhatja felül a meglévő design teljes témáját.
+- A 2026-10-12-i redesign világos/petrol témát, pasztell paneleket és sans címeket vezetett be. A megjelenés aktuális forrása az app-redesign mérnöki specifikáció és a .agents/DESIGN.md.
 
 ## Kompatibilitás és határok
 

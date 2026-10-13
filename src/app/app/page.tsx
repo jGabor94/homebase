@@ -1,242 +1,58 @@
 import type { FC } from "react";
 import Link from "next/link";
+import { ArrowRight, ArrowUpRight, ArrowDownRight, Droplet, Flame, Zap, Trash2, Ellipsis, ReceiptText, NotebookPen, Settings, Wallet, LockKeyhole, UsersRound, CalendarDays } from "lucide-react";
 import { auth } from "@/features/authentication/lib/auth";
+import { hasPermission } from "@/features/authorization/utils";
 import { canAccessNotes } from "@/features/notes/lib/access";
-import {
-  CalendarDays,
-  Droplets,
-  FileText,
-  Flame,
-  House,
-  LockKeyhole,
-  Plus,
-  Sun,
-  Trash2,
-  UsersRound,
-  Zap,
-} from "lucide-react";
-
-const bills = [
-  { label: "MVM · Gáz", amount: 12_400, Icon: Flame },
-  { label: "MVM · Villany", amount: 18_600, Icon: Zap },
-  { label: "ALFÖLDVÍZ", amount: 8_200, Icon: Droplets },
-  { label: "MOHU", amount: 4_800, Icon: Trash2 },
+import { getNotesPage } from "@/features/notes/dal/queries";
+import { getExpensesDashboard } from "@/features/monthly-expenses/dal/dashboard";
+import { getBudapestToday } from "@/features/monthly-expenses/utils/dashboard";
+import { formatMinorAsHuf } from "@/features/monthly-expenses/utils/money";
+import AppPageHeader from "@/components/AppPageHeader";
+import { Button } from "@/components/ui/button";
+const categories = [
+  { category: "water", label: "Víz", Icon: Droplet, tone: "bg-water", ink: "text-water-foreground" },
+  { category: "gas", label: "Gáz", Icon: Flame, tone: "bg-gas", ink: "text-gas-foreground" },
+  { category: "electricity", label: "Villany", Icon: Zap, tone: "bg-electricity", ink: "text-electricity-foreground" },
+  { category: "waste", label: "Hulladék", Icon: Trash2, tone: "bg-waste", ink: "text-waste-foreground" },
+  { category: "other", label: "Egyéb", Icon: Ellipsis, tone: "bg-other", ink: "text-other-foreground" },
 ];
-const loanPayment = 81_000;
-
-const monthlyUtilities = [
-  { month: "Ápr", amount: 34_000 },
-  { month: "Máj", amount: 45_000 },
-  { month: "Jún", amount: 59_000 },
-  { month: "Júl", amount: 49_000 },
-  { month: "Aug", amount: 38_000 },
-  { month: "Szept", amount: 44_000 },
-];
-
-const notes = [
-  {
-    title: "Bevásárlás",
-    content: ["Tej és kenyér", "Mosogatószer", "Gyümölcs"],
-    updated: "Ma frissítve",
-    privacy: "Családi",
-    tone: "bg-note-yellow",
-  },
-  {
-    title: "Hétvégi program",
-    content: ["Szombaton közös ebéd, utána séta."],
-    updated: "Tegnap",
-    privacy: "Családi",
-    tone: "bg-note-peach",
-  },
-  {
-    title: "Ötletek",
-    content: ["Erkély rendbetétele", "Új polc a dolgozószobába"],
-    updated: "3 napja",
-    privacy: "Privát",
-    tone: "bg-note-sage",
-  },
-];
-
-const formatForint = (amount: number) =>
-  `${new Intl.NumberFormat("hu-HU").format(amount)} Ft`;
-
+const panel = "min-w-0 rounded-[22px] border bg-card p-5 shadow-[0_4px_20px_rgba(16,37,45,0.025)] sm:p-6";
+const formatMonth = (month: string, short = false) => new Intl.DateTimeFormat("hu-HU", { month: short ? "short" : "long", ...(short ? {} : { year: "numeric" }), timeZone: "UTC" }).format(new Date(month + "-01T12:00:00Z"));
 const DashboardPage: FC = async () => {
   const session = await auth();
-  const canReadNotes = session?.user?.id ? await canAccessNotes(session.user.id) : false;
-  const utilitiesTotal = bills.reduce((total, bill) => total + bill.amount, 0);
-  const monthlyTotal = utilitiesTotal + loanPayment;
+  if (!session?.user) return null;
+  const canReadExpenses = hasPermission(session.user, "monthlyExpenses", "read");
+  const canReadNotes = await canAccessNotes(session.user.id);
+  const today = getBudapestToday();
+  const month = today.slice(0, 7);
+  const [expensesResult, notesResult] = await Promise.all([
+    canReadExpenses ? getExpensesDashboard(month) : Promise.resolve(null),
+    canReadNotes ? getNotesPage() : Promise.resolve(null),
+  ]);
+  const expenses = expensesResult?.success ? expensesResult.data : null;
+  const current = expenses?.current;
+  const recentNotes = notesResult?.success ? notesResult.data.notes.slice(0, 4) : [];
+  const maximum = Math.max(1, ...(expenses?.reports.map((report) => report.totalMinor ?? 0) ?? []));
+  const firstName = session.user.name?.split(" ")[0] || "jó, hogy itt vagy";
 
-  return (
-    <>
-
-      <main id="attekintes" className="mx-auto w-full max-w-[1280px] flex-1 px-5 pb-10 pt-7 sm:px-8 sm:pt-8 lg:px-10">
-        <section className="mb-6 flex flex-col justify-between gap-5 sm:mb-7 sm:flex-row sm:items-center">
-          <div>
-            <div className="flex items-center gap-4">
-              <h1 className="font-serif text-[clamp(3rem,6vw,4.25rem)] font-semibold leading-[1.05] tracking-[-0.045em] text-foreground">
-                Jó itthon.
-              </h1>
-              <Sun aria-hidden="true" className="size-12 text-amber-500 sm:size-14" strokeWidth={1.4} />
-            </div>
-            <p className="mt-1 text-lg text-muted-foreground sm:text-xl">
-              Számlák, tervek és minden, ami közös.
-            </p>
-          </div>
-          <div className="flex min-h-14 w-fit items-center gap-3 rounded-2xl border border-border bg-card px-4 text-sm text-foreground shadow-sm sm:px-5 sm:text-base">
-            <CalendarDays aria-hidden="true" className="size-5 text-primary" />
-            <span>2026. szeptember</span>
-          </div>
-        </section>
-
-        <div className="grid gap-5 lg:grid-cols-[1.45fr_1fr]">
-          <section
-            id="kozos"
-            aria-labelledby="monthly-heading"
-            className="rounded-[20px] border border-border bg-card p-5 shadow-[0_8px_24px_rgba(91,61,36,0.06)] sm:p-7"
-          >
-            <h2 id="monthly-heading" className="font-serif text-[28px] font-semibold leading-tight text-foreground">
-              A havi közös
-            </h2>
-            <p className="mt-1 text-base text-muted-foreground">Szeptemberi elszámolás</p>
-
-            <ul className="mt-3" aria-label="Szeptemberi számlák">
-              {bills.map(({ label, amount, Icon }) => (
-                <li key={label} className="flex min-h-11 items-center gap-4 border-b border-border/80 text-[15px] sm:text-base">
-                  <Icon aria-hidden="true" className="size-6 shrink-0 text-primary" strokeWidth={1.8} />
-                  <span>{label}</span>
-                  <span className="ml-auto tabular-nums">{formatForint(amount)}</span>
-                </li>
-              ))}
-              <li className="flex min-h-11 items-center gap-4 border-b border-border/80 text-[15px] sm:text-base">
-                <House aria-hidden="true" className="size-6 shrink-0 text-primary" strokeWidth={1.8} />
-                <span>Hitel</span>
-                <span className="ml-auto tabular-nums">{formatForint(loanPayment)}</span>
-              </li>
-            </ul>
-
-            <dl className="mt-2 space-y-1 text-base sm:text-lg">
-              <div className="flex min-h-11 items-center justify-between border-b border-border/80 font-semibold">
-                <dt>Összesen</dt>
-                <dd className="tabular-nums">{formatForint(monthlyTotal)}</dd>
-              </div>
-              <div className="flex min-h-11 items-center justify-between">
-                <dt>Utalandó fele</dt>
-                <dd className="font-semibold tabular-nums">{formatForint(monthlyTotal / 2)}</dd>
-              </div>
-            </dl>
-
-            <details className="group mt-3">
-              <summary className="flex min-h-12 w-fit cursor-pointer list-none items-center gap-3 rounded-xl bg-primary px-5 text-primary-foreground shadow-sm transition-[filter] hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
-                <FileText aria-hidden="true" className="size-5" />
-                Kimutatás megnyitása
-              </summary>
-              <div className="mt-3 rounded-xl border border-border bg-background p-4 text-sm text-muted-foreground">
-                <p className="font-medium text-foreground">Szeptemberi minta kimutatás</p>
-                <p className="mt-1">Közművek: {formatForint(utilitiesTotal)} · Hitel: {formatForint(loanPayment)}</p>
-                <p className="mt-1">Teljes összeg: {formatForint(monthlyTotal)} · Fejenként: {formatForint(monthlyTotal / 2)}</p>
-              </div>
-            </details>
-          </section>
-
-          <section
-            id="rezsi"
-            aria-labelledby="utilities-heading"
-            className="rounded-[20px] border border-border bg-card p-5 shadow-[0_8px_24px_rgba(91,61,36,0.06)] sm:p-7"
-          >
-            <h2 id="utilities-heading" className="font-serif text-[28px] font-semibold leading-tight text-foreground">
-              Így alakult a rezsi
-            </h2>
-            <p className="mt-1 text-base text-muted-foreground">Közművek · hitel nélkül</p>
-
-            <figure className="mt-5" aria-labelledby="chart-caption">
-              <figcaption id="chart-caption" className="sr-only">
-                Hat havi közműköltség, forintban. A szeptemberi érték 44 000 forint.
-              </figcaption>
-              <div className="flex h-[190px] gap-3" aria-hidden="true">
-                <div className="flex h-full flex-col justify-between text-xs text-muted-foreground">
-                  <span>80 000</span><span>60 000</span><span>40 000</span><span>20 000</span><span>0</span>
-                </div>
-                <div className="relative flex h-full flex-1 items-end justify-around border-b border-l border-border px-1">
-                  <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-                    {[80_000, 60_000, 40_000, 20_000].map((value) => (
-                      <span
-                        key={value}
-                        className="absolute left-0 right-0 border-t border-border/80"
-                        style={{ top: `${100 - (value / 80_000) * 100}%` }}
-                      />
-                    ))}
-                  </div>
-                  {monthlyUtilities.map(({ month, amount }) => (
-                    <div key={month} className="z-10 flex h-full w-[13%] flex-col items-center justify-end">
-                      <div
-                        className="w-full rounded-t-[5px] bg-accent/90"
-                        style={{ height: `${(amount / 80_000) * 100}%` }}
-                      />
-                      <span className="absolute -bottom-7 text-xs text-muted-foreground">{month}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <ul className="sr-only">
-                {monthlyUtilities.map(({ month, amount }) => (
-                  <li key={month}>{month}: {formatForint(amount)}</li>
-                ))}
-              </ul>
-            </figure>
-
-            <div className="mt-10 flex min-h-12 items-center justify-between border-t border-border text-base">
-              <span>Szeptember</span>
-              <strong className="text-lg tabular-nums">{formatForint(utilitiesTotal)}</strong>
-            </div>
-          </section>
-        </div>
-
-        <section id="jegyzetek" aria-labelledby="notes-heading" className="mt-7">
-          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-            <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
-              <h2 id="notes-heading" className="font-serif text-[30px] font-semibold leading-tight text-foreground">
-                A hűtőajtón
-              </h2>
-              <p className="text-sm text-muted-foreground sm:text-base">Közös és saját jegyzetek · bemutató</p>
-            </div>
-            {canReadNotes && <Link
-              href="/app/notes"
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-medium text-accent focus-visible:outline-2 focus-visible:outline-ring"
-            >
-              <Plus aria-hidden="true" className="size-5" />
-              Jegyzetfal megnyitása
-            </Link>}
-          </div>
-
-          <ul className="grid gap-4 md:grid-cols-3">
-            {notes.map(({ title, content, updated, privacy, tone }) => (
-              <li key={title} className={`min-h-[190px] rounded-[19px] border border-border/70 ${tone} p-5`}>
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-xl font-semibold text-foreground">{title}</h3>
-                  <span className="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-full bg-foreground/[0.06] px-3 text-xs font-medium text-foreground">
-                    {privacy === "Privát" ? (
-                      <LockKeyhole aria-hidden="true" className="size-4" />
-                    ) : (
-                      <UsersRound aria-hidden="true" className="size-4" />
-                    )}
-                    {privacy}
-                  </span>
-                </div>
-                <ul className="mt-2 space-y-0.5 text-[15px] leading-6 text-foreground">
-                  {content.map((line) => <li key={line}>{line}</li>)}
-                </ul>
-                <p className="mt-4 text-sm text-muted-foreground">{updated}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <footer className="mt-7 border-t border-border pt-4 text-center text-xs text-muted-foreground">
-          Bemutató · mintaadatok
-        </footer>
-      </main>
-    </>
-  );
+  return <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 pb-8 pt-4 sm:px-7 lg:px-8">
+    <AppPageHeader title="Itt a teljes kép." description="Számlák, tervek, jegyzetek és minden, ami az otthonunkhoz tartozik." greeting={session.user.name ? "Üdv újra, " + firstName + "!" : "Jó, hogy itt vagy."} />
+    <div className="grid gap-5 xl:grid-cols-2">
+      {canReadExpenses && <section aria-labelledby="monthly-cost-heading" className="relative min-h-48 overflow-hidden rounded-[22px] bg-linear-to-br from-sidebar via-primary to-primary/80 p-6 text-primary-foreground sm:p-7"><Wallet aria-hidden="true" className="absolute top-6 right-6 size-16 rounded-2xl bg-card/10 p-4 text-cyan-200" /><h2 id="monthly-cost-heading" className="max-w-[75%] text-base font-medium">{formatMonth(month)} · közös kiadások</h2>{expensesResult && !expensesResult.success ? <p role="alert" className="mt-5">{expensesResult.error.message}</p> : current ? <><p className="mt-3 text-4xl font-extrabold tracking-tight tabular-nums sm:text-5xl">{formatMinorAsHuf(current.totalMinor)} Ft</p><div className="mt-5 flex flex-wrap items-center gap-3 text-xs">{current.previous ? <><span className={"inline-flex items-center gap-1 rounded-full px-3 py-1.5 font-semibold " + (current.previous.percentage > 0 ? "bg-gas text-gas-foreground" : "bg-waste text-success")}>{current.previous.percentage > 0 ? <ArrowUpRight className="size-4" aria-hidden="true" /> : <ArrowDownRight className="size-4" aria-hidden="true" />}{current.previous.percentage > 0 ? "+" : ""}{current.previous.percentage}%</span><span className="text-primary-foreground/80">az előző hónaphoz képest</span></> : <span className="text-primary-foreground/80">{current.partial ? "Ismert tételek összege · részleges adatok" : "Nincs összehasonlítható előző havi adat"}</span>}<span className="ml-auto text-primary-foreground/85">Fele: <strong>{current.halfFormatted}</strong></span></div></> : <><p className="mt-5 max-w-sm text-lg font-semibold">Ehhez a hónaphoz még nincs kimutatás.</p><Link href="/app/monthly-expenses" className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4">Kimutatás indítása <ArrowRight className="size-4" aria-hidden="true" /></Link></>}</section>}
+      <section className={panel}><h2 className="text-lg font-bold">Gyors műveletek</h2><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">{[
+        ...(canReadExpenses ? [{ title: "Számla hozzáadása", href: "/app/monthly-expenses?action=invoice", Icon: ReceiptText, tone: "bg-gas", ink: "text-gas-foreground" }] : []),
+        ...(canReadNotes ? [{ title: "Új jegyzet", href: "/app/notes?new=1", Icon: NotebookPen, tone: "bg-accent", ink: "text-primary" }] : []),
+        ...(canReadExpenses ? [{ title: "Közművek megtekintése", href: "/app/monthly-expenses", Icon: Zap, tone: "bg-note-sage", ink: "text-success" }, { title: "Beállítások", href: "/app/settings", Icon: Settings, tone: "bg-muted", ink: "text-primary" }] : []),
+      ].map(({ title, href, Icon, tone, ink }) => <Link key={title} href={href} className={"flex min-h-28 flex-col items-start justify-center gap-3 rounded-2xl p-4 text-sm font-medium transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-ring " + tone}><Icon aria-hidden="true" className={"size-7 " + ink} />{title}</Link>)}{!canReadExpenses && !canReadNotes && <p className="col-span-full py-5 text-sm leading-6 text-muted-foreground">A családi funkciók használatához külön hozzáférés szükséges. Szólj az alkalmazás gazdájának.</p>}</div></section>
+      {canReadExpenses && <>
+        <section className={panel}><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-bold">Közművek áttekintése</h2><Link href="/app/monthly-expenses" className="inline-flex min-h-11 items-center gap-2 text-xs font-medium text-primary">Összes megtekintése <ArrowRight aria-hidden="true" className="size-4" /></Link></div><div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">{categories.filter((category) => category.category !== "other" || current?.categories.some((value) => value.category === "other" && value.amountMinor !== null)).map(({ category, label, Icon, tone, ink }) => { const value = current?.categories.find((item) => item.category === category); return <Link key={category} href="/app/monthly-expenses" className={"rounded-2xl p-4 outline-none focus-visible:ring-2 focus-visible:ring-ring " + tone}><Icon aria-hidden="true" className={"mb-3 size-7 " + ink} /><p className="text-sm">{label}</p><p className="mt-2 break-words text-base font-bold tabular-nums">{value?.amountMinor !== null && value?.amountMinor !== undefined ? formatMinorAsHuf(value.amountMinor) + " Ft" : "Nincs adat"}</p>{value?.partial && value.amountMinor !== null && <p className="mt-1 text-xs text-muted-foreground">Részleges</p>}</Link>; })}</div></section>
+        <section className={panel} aria-labelledby="dashboard-history-heading"><div className="flex items-center justify-between gap-3"><h2 id="dashboard-history-heading" className="text-lg font-bold">Közös kiadások az elmúlt 6 hónapban</h2><span className="rounded-lg bg-primary px-3 py-1 text-xs text-primary-foreground">Ft</span></div>{expensesResult && !expensesResult.success ? <p role="alert" className="mt-6 text-sm text-muted-foreground">{expensesResult.error.message}</p> : <><div aria-hidden="true" className="mt-6 flex h-44 items-end gap-3 border-b px-1">{expenses?.reports.map((report, index) => <div key={report.reportMonth} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end"><span className="mb-2 w-full truncate text-center text-[10px] font-medium tabular-nums text-muted-foreground">{report.totalMinor === null ? "—" : formatMinorAsHuf(report.totalMinor)}</span><div className={"w-full rounded-t-md " + (report.totalMinor === null ? "border border-dashed border-border" : index === 5 ? "bg-primary" : "bg-primary/30")} style={{ height: report.totalMinor === null ? "4%" : Math.max(3, report.totalMinor / maximum * 75) + "%" }} /><span className="mt-2 text-[11px] text-muted-foreground">{formatMonth(report.reportMonth, true)}</span></div>)}</div><details className="mt-5 text-xs text-muted-foreground"><summary className="cursor-pointer py-2">Adatok megtekintése · a hiányzó hónap nem nulla</summary><table className="mt-2 w-full text-left"><caption className="sr-only">Mentett havi közös költségek, a hozzáadott tételekkel együtt</caption><thead><tr><th scope="col" className="py-2">Hónap</th><th scope="col">Összeg</th><th scope="col">Adatok</th></tr></thead><tbody>{expenses?.reports.map((report) => <tr key={report.reportMonth} className="border-t"><th scope="row" className="py-2 font-normal">{formatMonth(report.reportMonth)}</th><td>{report.totalMinor === null ? "Nincs kimutatás" : formatMinorAsHuf(report.totalMinor) + " Ft"}</td><td>{report.partial ? "Hiányos" : "Teljes"}</td></tr>)}</tbody></table></details></>}</section>
+        <section className={panel}><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-bold">Közelgő határidők</h2><Link href="/app/monthly-expenses" className="inline-flex min-h-11 items-center gap-2 text-xs text-primary">Összes megtekintése <ArrowRight aria-hidden="true" className="size-4" /></Link></div><p className="mb-4 text-xs text-muted-foreground">A következő 30 nap ismert esedékességei. A lista nem fizetettségi nyilvántartás.</p><ul className="flex flex-col gap-2">{expenses?.deadlines.slice(0, 5).map((invoice) => { const category = categories.find((item) => item.category === invoice.category)!; return <li key={invoice.reportMonth + invoice.id}><Link href={"/app/monthly-expenses?month=" + invoice.reportMonth} className="flex min-h-16 items-center gap-3 rounded-2xl border bg-background/50 p-3"><span className={"flex size-10 shrink-0 items-center justify-center rounded-xl " + category.tone + " " + category.ink}><category.Icon aria-hidden="true" className="size-6" /></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{category.label} · {invoice.providerName}</p><p className="mt-1 text-xs text-muted-foreground">Fizetési határidő: {invoice.dueDate.replaceAll("-", ". ")}.</p></div><span className="shrink-0 text-sm font-bold tabular-nums">{formatMinorAsHuf(invoice.amountMinor ?? 0)} Ft</span></Link></li>; })}</ul>{!expenses?.deadlines.length && <p className="py-8 text-center text-sm text-muted-foreground">{expensesResult && !expensesResult.success ? expensesResult.error.message : "Nincs ismert közelgő határidő."}</p>}</section>
+      </>}
+      {canReadNotes && <section className={panel}><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-bold">Legutóbbi jegyzetek</h2><Link href="/app/notes" className="inline-flex min-h-11 items-center gap-2 text-xs text-primary">Összes megtekintése <ArrowRight aria-hidden="true" className="size-4" /></Link></div><ul className="mt-3 flex flex-col gap-2">{recentNotes.map((note, index) => <li key={note.id}><Link href={"/app/notes?note=" + note.id} className="flex min-h-16 items-center gap-3 rounded-2xl border bg-background/50 p-3"><span className={"flex size-10 shrink-0 items-center justify-center rounded-xl " + ["bg-note-sage", "bg-note-lavender", "bg-gas", "bg-accent"][index]}><NotebookPen aria-hidden="true" className="size-5 text-primary" /></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{note.title || "Cím nélküli jegyzet"}</p><p className="mt-1 truncate text-xs text-muted-foreground">{note.content.replace(/[*_#]/g, "").slice(0, 80)}</p></div><span className="flex shrink-0 flex-col items-end gap-1 text-xs text-muted-foreground">{note.visibility === "private" ? <LockKeyhole aria-label="Privát" className="size-4" /> : <UsersRound aria-label="Családdal megosztott" className="size-4" />}<time dateTime={note.updatedAt}>{new Intl.DateTimeFormat("hu-HU", { month: "short", day: "numeric", timeZone: "Europe/Budapest" }).format(new Date(note.updatedAt))}</time></span></Link></li>)}</ul>{!recentNotes.length && <div className="py-8 text-center"><p className="text-sm text-muted-foreground">{notesResult && !notesResult.success ? notesResult.error.message : "Még nincs jegyzet a falon."}</p>{notesResult?.success && <Button asChild variant="outline" className="mt-4"><Link href="/app/notes?new=1">Új jegyzet</Link></Button>}</div>}</section>}
+    </div>
+    <p className="mt-8 flex items-center justify-center gap-2 text-xs text-muted-foreground"><CalendarDays aria-hidden="true" className="size-4" />Az áttekintés a mentett adataitokat mutatja.</p>
+  </main>;
 };
-
 export default DashboardPage;

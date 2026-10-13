@@ -1,47 +1,28 @@
 import type { FC } from "react";
 import Link from "next/link";
-import { ArrowRight, House, NotebookPen, ReceiptText } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight, Droplet, CalendarDays, NotebookPen, UsersRound, Check, ShieldCheck } from "lucide-react";
+import Brand from "@/components/Brand";
 import { Button } from "@/components/ui/button";
-import LandingPromo from "@/features/landing/components/LandingPromo";
-
+import AppPreview from "@/features/landing/components/AppPreview";
+const features = [
+  { title: "Közös kiadások", text: "A háztartás számlái, a havi összesítés és a közös költségek átláthatóan.", Icon: Droplet, tone: "bg-water", ink: "text-water-foreground" },
+  { title: "A hétköznapok szervezése", text: "Fontos dátumok, ötletek és teendők a saját jegyzeteidben.", Icon: CalendarDays, tone: "bg-gas", ink: "text-gas-foreground" },
+  { title: "Közös jegyzetek", text: "Bevásárlólisták, tervek és fontos információk — egy helyen.", Icon: NotebookPen, tone: "bg-waste", ink: "text-waste-foreground" },
+  { title: "Egy nyugodtabb otthon", text: "Saját családi tér, egyszerű használat és kevesebb keresgélés.", Icon: UsersRound, tone: "bg-note-lavender", ink: "text-primary" },
+];
 const LandingPage: FC = () => {
 
-  return (
-    <main className="mx-auto flex min-h-svh w-full max-w-5xl flex-col px-6 py-8 sm:px-10">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <Link href="/" className="flex min-h-11 items-center gap-3 text-2xl font-semibold tracking-tight">
-          <House aria-hidden="true" className="size-8 text-primary" /> homebase
-        </Link>
-        <Button asChild variant="outline" className="min-h-11">
-          <Link href="/app">Az alkalmazás megnyitása <ArrowRight aria-hidden="true" data-icon="inline-end" /></Link>
-        </Button>
-      </header>
-      <section className="flex flex-1 flex-col justify-center py-16 sm:py-24">
-        <p className="mb-4 text-sm font-medium tracking-wide text-primary">A család közös tere</p>
-        <h1 className="max-w-2xl font-serif text-6xl font-semibold leading-tight tracking-tight sm:text-7xl">Jó itthon.</h1>
-        <p className="mt-5 max-w-xl text-xl leading-relaxed text-muted-foreground">Számlák, tervek és minden, ami közös. Egy nyugodt hely a család mindennapi dolgaihoz.</p>
-        <Button asChild size="lg" className="mt-8 min-h-12 w-fit rounded-xl">
-          <Link href="/login">Bejelentkezés Google-fiókkal <ArrowRight aria-hidden="true" data-icon="inline-end" /></Link>
-        </Button>
-        <div className="mt-12">
-          <LandingPromo />
-        </div>
-        <div className="mt-14 grid gap-5 sm:grid-cols-2">
-          <article className="rounded-2xl border bg-card p-6">
-            <ReceiptText aria-hidden="true" className="mb-4 size-7 text-primary" />
-            <h2 className="font-serif text-2xl font-semibold">Közös kiadások</h2>
-            <p className="mt-2 leading-relaxed text-muted-foreground">Havi közműszámlák beolvasása és átlátható összesítése, egy helyen.</p>
-          </article>
-          <article className="rounded-2xl border bg-note-sage p-6">
-            <NotebookPen aria-hidden="true" className="mb-4 size-7 text-primary" />
-            <h2 className="font-serif text-2xl font-semibold">A hűtőajtón</h2>
-            <p className="mt-2 leading-relaxed text-muted-foreground">A közös és személyes jegyzetek otthona készülőben van. Az alkalmazásban már megnézheted a bemutatóját.</p>
-          </article>
-        </div>
-      </section>
-      <footer className="text-sm text-muted-foreground">homebase · A család saját használatára.</footer>
-    </main>
-  );
+  return <main className="relative min-h-svh overflow-hidden bg-card">
+    <header className="relative z-10 mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-5 py-6 sm:px-10 lg:px-14"><Link href="/" className="rounded-lg focus-visible:outline-2 focus-visible:outline-ring"><Brand compact /></Link><nav aria-label="Publikus navigáció" className="hidden items-center gap-8 text-sm lg:flex"><Link href="#funkciok">Funkciók</Link><Link href="#mukodes">Hogyan működik?</Link><Link href="#biztonsag">Biztonság</Link></nav><div className="flex items-center gap-5"><Link href="/login" className="hidden min-h-11 items-center text-sm font-medium text-primary sm:inline-flex">Bejelentkezés</Link><Button asChild variant="default" className="rounded-xl"><Link href="/app">Megnyitás <ArrowRight aria-hidden="true" data-icon="inline-end" /></Link></Button></div></header>
+    <section className="relative mx-auto grid max-w-[1440px] items-center gap-8 px-5 pt-10 pb-12 sm:px-10 lg:min-h-[570px] lg:grid-cols-[0.9fr_1.1fr] lg:gap-5 lg:px-14 lg:pt-8">
+      <div className="relative z-10"><p className="mb-6 inline-flex rounded-full bg-accent px-4 py-2 text-xs font-medium text-primary">A család közös tere</p><h1 className="max-w-xl text-[clamp(2.5rem,5.3vw,4.5rem)] font-extrabold leading-[1.04] tracking-[-0.055em]">Több idő<br />a fontos dolgokra.</h1><p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground">Számlák, tervek, jegyzetek és minden, ami a közös otthonhoz tartozik — egy nyugodt, átlátható helyen, az egész család számára.</p><div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap"><Button asChild size="lg" className="rounded-xl"><Link href="/login">Bejelentkezés Google-fiókkal <ArrowRight aria-hidden="true" data-icon="inline-end" /></Link></Button><Button asChild variant="outline" size="lg" className="rounded-xl"><Link href="/app">Az alkalmazás megnyitása</Link></Button></div><p className="mt-6 flex items-center gap-3 text-sm text-muted-foreground"><UsersRound aria-hidden="true" className="size-5 text-primary" />A család saját használatára. Minden fontos dolog egy helyen.</p></div>
+      <div className="relative min-w-0 pt-28 pb-6 lg:-mr-6 lg:pt-40"><Image src="/images/homebase/home-wide.webp" alt="" width={1800} height={600} preload sizes="(min-width: 1024px) 700px, 100vw" className="absolute -top-8 right-[-12%] w-[105%] max-w-none lg:-top-24 lg:w-[115%]" /><div className="relative rotate-[-2deg] motion-reduce:rotate-0"><AppPreview /></div></div>
+    </section>
+    <section id="funkciok" aria-label="A Homebase funkciói" className="relative mx-auto grid max-w-[1440px] gap-4 px-5 py-6 sm:grid-cols-2 sm:px-10 lg:grid-cols-4 lg:px-14">{features.map(({ title, text, Icon, tone, ink }) => <article key={title} className={"relative flex gap-4 overflow-hidden rounded-[22px] border p-5 sm:flex-col " + tone}><span className={"flex size-12 shrink-0 items-center justify-center rounded-xl bg-card/65 " + ink}><Icon aria-hidden="true" className="size-7" /></span><div><h2 className="text-lg font-bold tracking-tight">{title}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{text}</p></div></article>)}</section>
+    <section id="mukodes" className="mx-auto max-w-[1440px] px-5 py-8 sm:px-10 lg:px-14"><div className="grid overflow-hidden rounded-[28px] border"><Image src="/images/homebase/living-wide.webp" width={1800} height={600} alt="Napsütéses nappali növényekkel és a szőnyegen pihenő kutyával" sizes="(min-width: 1440px) 1330px, 100vw" className="h-auto w-full" /><div className="flex flex-col justify-center p-6 sm:p-10"><p className="mb-4 w-fit rounded-full bg-accent px-3 py-1.5 text-xs font-medium text-primary">Több, mint egy app</p><h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Egy rendezettebb otthon kezdete.</h2><p className="mt-4 leading-relaxed text-muted-foreground">Lépj be a saját Google-fiókoddal, rögzítsd a havi számlákat, és tartsd kéznél a saját vagy családdal megosztott jegyzeteidet.</p><div className="mt-6 flex flex-wrap gap-4 text-xs text-muted-foreground">{["Egyszerűen használható", "A család közös tere", "Privát és megosztott jegyzetek"].map((text) => <span key={text} className="flex items-center gap-2"><Check aria-hidden="true" className="size-5 rounded-full bg-waste p-1 text-success" />{text}</span>)}</div></div></div></section>
+    <section id="biztonsag" className="mx-auto flex max-w-[1330px] flex-col gap-4 px-5 py-10 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-3"><ShieldCheck aria-hidden="true" className="size-6 shrink-0 text-primary" /><div><h2 className="font-semibold">A saját családi teretek.</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">A számlákhoz és a jegyzetekhez külön hozzáférés szükséges. A privát jegyzeteidet csak te láthatod; az e-mail-küldés mindig külön művelet.</p></div></div><Button asChild variant="outline"><Link href="/login">Jó, hogy itt vagy <ArrowRight aria-hidden="true" data-icon="inline-end" /></Link></Button></section>
+    <footer className="border-t px-5 py-6 text-center text-xs text-muted-foreground">homebase · Számlák, tervek és minden, ami közös.</footer>
+  </main>;
 };
-
 export default LandingPage;
