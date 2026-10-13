@@ -1,34 +1,93 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { resolveExtensions } from "@tiptap/core";
+import { Markdown, MarkdownManager } from "@tiptap/markdown";
+import StarterKit from "@tiptap/starter-kit";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import NoteContent from "../components/NoteContent";
-import { getNotePlainText, getNotePreview, parseNoteMarkdown } from "../lib/note-formatting";
+import { getNotePlainText, getNotePreview } from "../lib/note-formatting";
 import { noteCreateSchema, noteFormSchema, noteUpdateSchema } from "../zod/schema";
 
-test("limited markdown parses emphasis, paragraphs, line breaks, and one-level lists", () => {
-  const blocks = parseNoteMarkdown("Szia **család**!\nMásodik sor\n\n- tej\n- *kenyér*");
-  assert.equal(blocks.length, 2);
-  assert.equal(blocks[0]?.type, "paragraph");
-  assert.equal(blocks[1]?.type, "unordered-list");
-  assert.equal(getNotePlainText("Szia **család**!\n- tej"), "Szia család! tej");
+const markdownManager = new MarkdownManager({
+  extensions: resolveExtensions([
+    StarterKit.configure({ link: { openOnClick: false, autolink: false, linkOnPaste: false }, underline: false, heading: { levels: [2, 3] } }),
+    Markdown,
+  ]),
 });
 
-test("unsupported HTML and links stay literal text, never become markup", () => {
-  const content = "<img src=x onerror=alert(1)> [oldal](https://example.test)";
-  assert.deepEqual(parseNoteMarkdown(content), [{ type: "paragraph", lines: [[{ type: "text", value: content }]] }]);
-  assert.match(getNotePreview(content), /^<img/);
+test("plain text extraction handles rich Markdown without losing punctuation or code literals", () => {
+  const content = [
+    "## Családi *terv*",
+    "",
+    "> Szia **család**!",
+    "",
+    "- ~~tej~~ és `* _ <div>`",
+    "- **félkövér _dőlt_**",
+    "",
+    "```ts",
+    'const x = "* _ <div>";',
+    "```",
+  ].join("\n");
+
+  assert.equal(
+    getNotePlainText(content),
+    'Családi terv Szia család! tej és * _ <div> félkövér dőlt const x = "* _ <div>";',
+  );
+  assert.equal(getNotePreview("**Szia**! *Helló*", 11), "Szia! Helló");
+});
+
+test("Tiptap Markdown parses and serializes nested marks, headings, quotes, strike, and nested lists", () => {
+  const content = [
+    "## Bevásárlás",
+    "",
+    "> Családi **terv**!",
+    "",
+    "- ~~tej~~",
+    "  - *kenyér*",
+    "1. **kávé _őrölve_**",
+  ].join("\n");
+  const parsed = markdownManager.parse(content);
+  const savedMarkdown = markdownManager.serialize(parsed);
+  const reopened = markdownManager.parse(savedMarkdown);
+
+  assert.equal(getNotePlainText(savedMarkdown), getNotePlainText(content));
+  assert.equal(getNotePlainText(markdownManager.serialize(reopened)), getNotePlainText(content));
+  assert.match(savedMarkdown, /## Bevásárlás/);
+  assert.match(savedMarkdown, /~~tej~~/);
+  assert.match(savedMarkdown, /\*kenyér\*/);
+});
+
+test("unsupported HTML and unsafe destinations never render as active markup", () => {
+  const content = '<img src=x onerror=alert(1)> [oldal](https://example.test) ![kép](https://example.test/photo.png) [rossz](javascript:alert(1))';
   const rendered = renderToStaticMarkup(createElement(NoteContent, { content }));
-  assert.match(rendered, /&lt;img/);
+
   assert.doesNotMatch(rendered, /<img\b/);
-  assert.doesNotMatch(rendered, /<a\b/);
+  assert.doesNotMatch(rendered, /onerror/);
+  assert.match(rendered, /<a href="https:\/\/example\.test"/);
+  assert.doesNotMatch(rendered, /href="javascript:/);
+  assert.match(getNotePreview(content), /oldal/);
+  assert.doesNotMatch(getNotePreview(content), /photo\.png|javascript/);
+});
+
+test("legacy heading and table content remains visible when its Markdown node is outside the editor schema", () => {
+  const content = "# Régi címsor\n\n| Régi | Érték |\n| --- | --- |\n| Lakás | Kész |";
+  const rendered = renderToStaticMarkup(createElement(NoteContent, { content }));
+
+  assert.match(rendered, /Régi címsor/);
+  assert.match(rendered, /Lakás/);
+  assert.doesNotMatch(rendered, /<h1\b|<table\b/);
 });
 
 test("notes require visible text and enforce title and content lengths", () => {
-  assert.equal(noteFormSchema.safeParse({ title: "", content: " **_** ", visibility: "private" }).success, false);
+  for (const content of [" **_** ", "##", ">", "- ", "```ts\n```", "![csak kép](https://example.test/a.png)", "<img src=x>"]) {
+    assert.equal(noteFormSchema.safeParse({ title: "", content, visibility: "private" }).success, false, content);
+  }
   assert.equal(noteFormSchema.safeParse({ title: "x".repeat(121), content: "szöveg", visibility: "family" }).success, false);
   assert.equal(noteFormSchema.safeParse({ title: "", content: "x".repeat(5001), visibility: "private" }).success, false);
+  assert.equal(noteFormSchema.safeParse({ title: "", content: "## Cím", visibility: "private" }).success, true);
   assert.equal(noteFormSchema.safeParse({ title: "", content: "**Szia**", visibility: "private" }).success, true);
+  assert.equal(noteFormSchema.safeParse({ title: "", content: "`* _ <div>`", visibility: "private" }).success, true);
 });
 
 test("titleless form output remains valid for create and update actions", () => {

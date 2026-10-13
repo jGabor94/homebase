@@ -1,56 +1,48 @@
-import { Fragment, type FC } from "react";
-import { getNotePlainText, parseNoteMarkdown, type NoteBlock, type NoteInline } from "../lib/note-formatting";
+import ReactMarkdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
+import type { FC } from "react";
+import { convertNoteEmoticons } from "../utils/note-emoticons";
 
 interface NoteContentProps {
   content: string;
   compact?: boolean;
-  maxCharacters?: number;
 }
 
-const renderInline = (tokens: NoteInline[]) => tokens.map((token, index) => {
-  if (token.type === "bold") return <strong key={index} className="font-semibold">{token.value}</strong>;
-  if (token.type === "italic") return <em key={index}>{token.value}</em>;
-  return <Fragment key={index}>{token.value}</Fragment>;
-});
-
-const clipBlocks = (blocks: NoteBlock[], maxCharacters: number): NoteBlock[] => {
-  let remaining = maxCharacters;
-  const clipped: NoteBlock[] = [];
-  for (const block of blocks) {
-    if (remaining <= 0) break;
-    const lines = block.type === "paragraph" ? block.lines : block.items;
-    const nextLines = [];
-    for (const line of lines) {
-      if (remaining <= 0) break;
-      const nextLine: NoteInline[] = [];
-      for (const token of line) {
-        if (remaining <= 0) break;
-        const value = token.value.slice(0, remaining);
-        if (value) nextLine.push({ ...token, value });
-        remaining -= value.length;
-      }
-      if (nextLine.length) nextLines.push(nextLine);
-    }
-    if (nextLines.length) clipped.push(block.type === "paragraph" ? { type: "paragraph", lines: nextLines } : { type: block.type, items: nextLines });
+const safeUrlTransform = (value: string): string => {
+  if (value.startsWith("//") || value.startsWith("\\\\")) return "";
+  try {
+    const url = new URL(value, "https://homebase.invalid");
+    if (["https:", "http:", "mailto:"].includes(url.protocol)) return value;
+    return "";
+  } catch {
+    return "";
   }
-  return clipped;
 };
 
-const NoteContent: FC<NoteContentProps> = ({ content, compact = false, maxCharacters }) => {
-  const parsed = parseNoteMarkdown(content);
-  const blocks = maxCharacters ? clipBlocks(parsed, maxCharacters) : parsed;
-  const truncated = maxCharacters !== undefined && getNotePlainText(content).length > maxCharacters;
-
-  return (
-    <div className={`break-words [overflow-wrap:anywhere] ${compact ? "max-h-32 overflow-hidden" : ""}`}>
-      {blocks.map((block, index) => {
-        if (block.type === "unordered-list") return <ul key={index} className="my-2 list-disc pl-5">{block.items.map((item, itemIndex) => <li key={itemIndex}>{renderInline(item)}</li>)}</ul>;
-        if (block.type === "ordered-list") return <ol key={index} className="my-2 list-decimal pl-5">{block.items.map((item, itemIndex) => <li key={itemIndex}>{renderInline(item)}</li>)}</ol>;
-        return <p key={index} className="my-2 first:mt-0 last:mb-0">{block.lines.map((line, lineIndex) => <Fragment key={lineIndex}>{lineIndex > 0 && <br />}{renderInline(line)}</Fragment>)}</p>;
-      })}
-      {truncated && <span aria-hidden="true">…</span>}
-    </div>
-  );
+const markdownComponents: Components = {
+  a: ({ href, title, children }) => <a href={href} title={title} rel="noopener noreferrer" target="_blank">{children}</a>,
+  img: () => null,
+  input: () => null,
 };
+
+const compactMarkdownComponents: Components = {
+  ...markdownComponents,
+  a: ({ children }) => <span>{children}</span>,
+};
+
+const NoteContent: FC<NoteContentProps> = ({ content, compact = false }) => (
+  <div className={`break-words [overflow-wrap:anywhere] ${compact ? "line-clamp-4 max-h-32 overflow-hidden" : ""} [&_a]:text-primary [&_a]:underline [&_blockquote]:my-2 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-4 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_h2]:my-2 [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:my-2 [&_h3]:text-base [&_h3]:font-semibold [&_li]:ml-5 [&_ol]:my-2 [&_ol]:list-decimal [&_p]:my-2 [&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-muted [&_pre]:p-3 [&_ul]:my-2 [&_ul]:list-disc`}>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      allowedElements={["a", "blockquote", "br", "code", "del", "em", "h2", "h3", "hr", "li", "ol", "p", "pre", "strong", "ul"]}
+      unwrapDisallowed
+      skipHtml
+      urlTransform={safeUrlTransform}
+      components={compact ? compactMarkdownComponents : markdownComponents}
+    >
+      {convertNoteEmoticons(content)}
+    </ReactMarkdown>
+  </div>
+);
 
 export default NoteContent;

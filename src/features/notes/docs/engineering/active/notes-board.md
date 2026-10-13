@@ -39,16 +39,15 @@ Családi jegyzet privátra állítása után új lekérés már nem adhatja viss
 
 ## Szöveg és formázás
 
-Az első változat szövegmezőt használ kis formázó eszköztárral, korlátozott Markdown-tartalommal. A feature saját, szűk parserrel és React-elemekkel jeleníti meg a tartalmat; új szerkesztő- vagy Markdown-függőség nem került be.
+A tartalom kliensoldali vizuális szerkesztőben készül, de továbbra is Markdown-szövegként tárolódik. A szerkesztő a régi Markdownból indul, és betöltéskor nem írja vissza vagy jelöli módosítottnak az értéket. Felhasználói szerkesztéskor a Tiptap Markdown-kimenete kerül a meglévő `content` mezőbe.
 
-- Támogatott: sima szöveg, bekezdés, sortörés, félkövér, dőlt, egyszintű felsorolás és számozott lista.
-- A formázógombok a kijelölésre alkalmazzák a megfelelő jelölést; minden gomb billentyűzettel és feliratozással használható.
-- Nyers HTML, képek, linkek, kódblokkok, táblázatok és beágyazások nem támogatottak. A nem támogatott jelölések szövegként jelennek meg.
-- A renderelő engedélyezési listát használ, a szöveget escape-eli; tárolt vagy beillesztett HTML nem futtatható, nincs ellenőrizetlen `dangerouslySetInnerHTML`.
-- Opcionális cím legfeljebb 120 karakter, tartalom legfeljebb 5000 karakter, a jelölésekkel együtt. A csak whitespace-et vagy formázójeleket tartalmazó, látható szöveg nélküli jegyzet érvénytelen. Magyar ékezetek és emoji megengedettek.
+- Támogatott: sima szöveg, bekezdés és sortörés, félkövér, dőlt, áthúzott, 2./3. címsor, idézet, sorkód, kódblokk, többszintű felsorolás és számozott lista, visszavonás/újra.
+- Formázógombok a kijelölésre vagy az aktuális kurzorpozícióra hatnak, a kijelölés és aktív formázás a szerkesztés során megmarad. A vezérlők billentyűzettel és feliratozással használhatók.
+- A mentett Markdown biztonságos `react-markdown` renderelőn fut át. Nyers HTML és képek eldobva, HTML-bővítmény nincs; engedélyezett HTML-elemek szűk listája engedi a támogatott szövegstruktúrákat és linkeket. A linkek URL-sémája http/https/mailto vagy relatív cím lehet.
+- Opcionális cím legfeljebb 120 karakter, a Markdown-jelölésekkel együtt számolt tartalom legfeljebb 5000 karakter. A csak whitespace-et, üres formázást, címsor/idézet/lista jelölést, HTML-t vagy képet tartalmazó jegyzet érvénytelen. Sorkód és kódblokk belsejének karakterei látható szövegnek számítanak.
 - Cím nélkül a kártya címe **Cím nélküli jegyzet**; ez megjelenítési fallback, nem a tárolt szöveg része.
 
-A szerver validálja a tartalmat és a láthatóságot is. A megjelenített előnézet ugyanazokat a formázási szabályokat használja, mint a teljes jegyzet; nem HTML-string csonkolásával készül.
+A szervervalidáció a Marked tokenizálásával ugyanazt a látható szöveget ellenőrzi, amit a biztonságos olvasónézet megjelenít; kompakt cetli-előnézetben CSS-soros csonkolás őrzi meg a formázást.
 
 ## Üzenőfal és papírcetli megjelenés
 

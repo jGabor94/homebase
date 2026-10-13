@@ -2,12 +2,14 @@
 
 Állapot: implementált és a konfigurált Neon `development` adatbázison bevezetett funkció. Egy megadott, létező fiók hozzáférése kiosztva; a másik megadott családtagnál az első Google-belépés még szükséges. Dátum: 2026-10-12.
 
-A család saját üzenőfala egyszerű szöveges jegyzetekkel, alapvető formázással és papírcetli megjelenéssel. A felhasználó privát jegyzetet készíthet magának, vagy megoszthatja azt a családdal. A „publikus” ebben a feature-ben kizárólag családon belüli láthatóságot jelent.
+A család saját üzenőfala vizuális, rich-text szerkesztővel és papírcetli megjelenéssel. A tartalom Markdown-szövegként tárolódik, így a régi jegyzetek továbbra is olvashatók, a formázás pedig a szerkesztőben jelölések nélkül jelenik meg. A felhasználó privát jegyzetet készíthet magának, vagy megoszthatja azt a családdal. A „publikus” ebben a feature-ben kizárólag családon belüli láthatóságot jelent.
 
 ## Működés
 
 - Jegyzet létrehozása, megnyitása, szerkesztése és megerősítés utáni törlése.
-- Opcionális cím, kötelező szöveg; félkövér, dőlt, felsorolás és számozott lista.
+- Opcionális cím, kötelező szöveg; félkövér, dőlt, áthúzott, 2./3. címsor, idézet, sorkód, kódblokk, többszintű felsorolás és számozott lista, visszavonás/újra.
+- Smiley-választó és karakteres smiley-k: például `:D`, `:)`, `;)`, `:(`, `:P` és `<3` gépeléskor emojivá alakulnak. A mentés a beillesztett smiley-kat is normalizálja; kódrészletek és linkcímek változatlanok.
+- A cím legfeljebb 120, a Markdown-jelölésekkel együtt számolt tartalom legfeljebb 5000 karakter. A formázott előnézet és olvasónézet a támogatott Markdown-elemeket mutatja; a nyers HTML, képek és beágyazások nem jelennek meg aktív tartalomként.
 - Új jegyzet alapértelmezésben **Privát**. A tulajdonos bármikor **Családdal megosztott** állapotra válthat, majd visszaállíthatja privátra.
 - Csak a tulajdonos szerkeszthet, törölhet és módosíthat láthatóságot. A család többi tagja a megosztott jegyzetet olvashatja.
 - Az `/app/notes` üzenőfal a saját privát és a családdal megosztott jegyzeteket együtt mutatja, legutóbbi módosítás szerint rendezve.
@@ -26,7 +28,7 @@ A `notes` tábla, indexek, FK, check constraint-ek és RLS a felhasználó kül�
 
 ## Ellenőrzés
 
-`npm run test:notes`: 5/5 sikeres, formázás, HTML-escape, inputvalidáció, cím nélküli mentési payload, hamis tulajdonosmezők kiszűrése és szerepkörök. Célzott ESLint és production build sikeres; a build a teljes TypeScript-ellenőrzést is elvégezte. Desktop és 390 px mobil statikus, fiktív adatos cetli-/szerkesztő-előnézet ellenőrzött.
+`npm run test:notes`: 10/10 sikeres a Tiptap Markdown szerializálás/újranyitás, rich text láthatószöveg, inputvalidáció és nem biztonságos HTML/link célok ellenőrzésével. Az utolsó, régi címsor-/táblázatszöveget megőrző renderelőmódosítás után a célzott formázási tesztek 6/6 sikeresek, és a módosított fájlok ESLint-ellenőrzése is sikeres. `npx tsc --noEmit` és production build sikeres. A korábbi statikus előnézet a Tiptap bevezetése előtti szerkesztőt fedte le; az új hidratált szerkesztőt böngészőben még nem ellenőriztük.
 
 A development adatbázison sikeres visszagörgetett migrációs próba, Drizzle-bevezetés és tárolási CRUD-/verzióellenőrzés futott. A tényleges notes lekérdezésekkel, két szintetikus taggal igazolt a privát/családi szűrés, a láthatóságváltás, a 30 elem feletti lapozás és a tagság visszavonása. A próba nem hagyott tesztfelhasználót vagy tesztjegyzetet. A teljes, Google-belépéssel induló hidratált böngészős munkafolyamat még nincs igazolva.
 

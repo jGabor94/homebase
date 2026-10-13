@@ -35,7 +35,7 @@ const NoteCard: FC<NoteCardProps> = ({ note, onOpen, onEdit, onDelete, canEdit, 
         </div>
         <div className="min-w-0 flex-1">
           <h2 id={titleId} className="mb-2 break-words text-lg font-semibold tracking-tight text-foreground [overflow-wrap:anywhere]">{note.title || "Cím nélküli jegyzet"}</h2>
-          <div className="line-clamp-4 overflow-hidden text-sm leading-6 text-foreground/85"><NoteContent content={note.content} compact maxCharacters={list ? 250 : 180} /></div>
+          <div className="text-sm leading-6 text-foreground/85"><NoteContent content={note.content} compact /></div>
         </div>
         <div className={`flex items-center gap-2 text-xs text-muted-foreground ${list ? "sm:w-40 sm:shrink-0" : "mt-auto border-t border-foreground/10 pt-4"}`}>
           <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-full bg-[#126574] text-xs font-semibold text-white">{initials}</span>

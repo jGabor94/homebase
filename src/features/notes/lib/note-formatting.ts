@@ -1,74 +1,52 @@
-export type NoteInline = { type: "text"; value: string } | { type: "bold" | "italic"; value: string };
-export type NoteBlock =
-  | { type: "paragraph"; lines: NoteInline[][] }
-  | { type: "unordered-list"; items: NoteInline[][] }
-  | { type: "ordered-list"; items: NoteInline[][] };
+import { marked, type Token } from "marked";
 
-const inlinePattern = /(\*\*[^*\n]+\*\*|__[^_\n]+__|\*[^*\n]+\*|_[^_\n]+_)/g;
-
-export const parseNoteInline = (line: string): NoteInline[] => {
-  const result: NoteInline[] = [];
-  let offset = 0;
-  for (const match of line.matchAll(inlinePattern)) {
-    const start = match.index ?? 0;
-    if (start > offset) result.push({ type: "text", value: line.slice(offset, start) });
-    const token = match[0];
-    const strong = token.startsWith("**") || token.startsWith("__");
-    result.push({ type: strong ? "bold" : "italic", value: token.slice(strong ? 2 : 1, strong ? -2 : -1) });
-    offset = start + token.length;
+const getTokenText = (token: Token): string => {
+  switch (token.type) {
+    case "code":
+    case "codespan":
+    case "escape":
+      return token.text;
+    case "text":
+      if (token.tokens) return getTokensText(token.tokens);
+      return !token.escaped && /^[*_~]+$/.test(token.text) ? "" : token.text;
+    case "del":
+    case "em":
+    case "link":
+    case "strong":
+      return getTokensText(token.tokens ?? []);
+    case "heading":
+    case "paragraph":
+      return getTokensText(token.tokens ?? []);
+    case "blockquote":
+      return getTokensText(token.tokens ?? [], " ");
+    case "list":
+      return token.items.map((item: { tokens?: Token[] }) => getTokensText(item.tokens ?? [], " ")).join(" ");
+    case "list_item":
+      return getTokensText(token.tokens ?? [], " ");
+    case "table":
+      return [...token.header, ...token.rows.flat()].map((cell) => getTokensText(cell.tokens)).join(" ");
+    case "br":
+    case "space":
+      return " ";
+    case "image":
+    case "html":
+    case "checkbox":
+    case "def":
+    case "hr":
+      return "";
+    default:
+      return "tokens" in token && token.tokens ? getTokensText(token.tokens) : "";
   }
-  if (offset < line.length) result.push({ type: "text", value: line.slice(offset) });
-  return result.length > 0 ? result : [{ type: "text", value: line }];
 };
 
-const unorderedItem = /^\s{0,3}[-*+]\s+(.+)$/;
-const orderedItem = /^\s{0,3}\d+\.\s+(.+)$/;
+const getTokensText = (tokens: Token[], separator = ""): string => tokens.map(getTokenText).join(separator);
 
-export const parseNoteMarkdown = (content: string): NoteBlock[] => {
-  const blocks: NoteBlock[] = [];
-  let paragraph: string[] = [];
-  let list: { type: "unordered-list" | "ordered-list"; items: NoteInline[][] } | null = null;
-
-  const flushParagraph = () => {
-    if (paragraph.length) blocks.push({ type: "paragraph", lines: paragraph.map(parseNoteInline) });
-    paragraph = [];
-  };
-  const flushList = () => {
-    if (list) blocks.push(list);
-    list = null;
-  };
-
-  for (const line of content.replace(/\r\n?/g, "\n").split("\n")) {
-    if (!line.trim()) {
-      flushParagraph();
-      flushList();
-      continue;
-    }
-    const unordered = unorderedItem.exec(line);
-    const ordered = orderedItem.exec(line);
-    if (unordered || ordered) {
-      flushParagraph();
-      const type = unordered ? "unordered-list" : "ordered-list";
-      if (list && list.type !== type) flushList();
-      list ??= { type, items: [] };
-      list.items.push(parseNoteInline((unordered ?? ordered)![1]));
-    } else {
-      flushList();
-      paragraph.push(line);
-    }
-  }
-  flushParagraph();
-  flushList();
-  return blocks;
-};
-
-export const getNotePlainText = (content: string): string => parseNoteMarkdown(content)
-  .flatMap((block) => block.type === "paragraph" ? block.lines : block.items)
-  .map((line) => line.map((token) => token.value).join(""))
-  .join(" ");
+export const getNotePlainText = (content: string): string => getTokensText(marked.lexer(content, { gfm: true }), " ")
+  .replace(/\s+/g, " ")
+  .trim();
 
 export const getNotePreview = (content: string, maxCharacters = 180): string => {
-  const text = getNotePlainText(content).replace(/\s+/g, " ").trim();
+  const text = getNotePlainText(content);
   if (text.length <= maxCharacters) return text;
   return `${text.slice(0, maxCharacters).trimEnd()}…`;
 };

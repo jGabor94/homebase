@@ -1,20 +1,17 @@
 import { z } from "zod";
-
-const visibleText = (content: string) => content
-  .replace(/^\s{0,3}(?:[-*+]\s+|\d+\.\s+)/gm, "")
-  .replace(/(?:\*\*|__|\*|_)/g, "")
-  .replace(/[\r\n\s]/g, "").length > 0;
+import { getNotePlainText } from "../lib/note-formatting";
+import { convertNoteEmoticons } from "../utils/note-emoticons";
 
 export const noteContentSchema = z.string()
   .max(5000, { message: "A jegyzet legfeljebb 5000 karakter lehet." })
-  .refine(visibleText, { message: "Írj legalább egy látható karaktert a jegyzetbe." });
+  .refine((content) => getNotePlainText(content).length > 0, { message: "Írj legalább egy látható karaktert a jegyzetbe." });
 
 export const noteFieldsSchema = z.object({
   title: z.union([
     z.string().trim().max(120, { message: "A cím legfeljebb 120 karakter lehet." }),
     z.null(),
   ]),
-  content: noteContentSchema,
+  content: noteContentSchema.transform(convertNoteEmoticons),
   visibility: z.enum(["private", "family"], { message: "Válassz érvényes láthatóságot." }),
 });
 
