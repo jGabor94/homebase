@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState, type FC } from "react";
+import Image from "next/image";
+import { UTILITY_CATEGORY_LOGOS } from "../config";
 import { CalendarRange, Droplets, Flame, MoreHorizontal, Trash2, Zap, type LucideIcon } from "lucide-react";
 import type { UtilityHistoryMonth } from "../types";
 
@@ -82,9 +84,9 @@ const UtilityHistoryChart: FC<UtilityHistoryChartProps> = ({ history, error, end
   const totalOverflow = mode === "cost" && !Number.isSafeInteger(total);
   const maxValue = Math.max(...values, 0);
   const axisMax = maxValue > 0 ? maxValue * 1.18 : 1;
-  const width = 920;
-  const height = 320;
-  const plot = { left: 54, right: 12, top: 24, bottom: 50 };
+  const width = 560;
+  const height = 280;
+  const plot = { left: 100, right: 16, top: 24, bottom: 44 };
   const plotWidth = width - plot.left - plot.right;
   const plotHeight = height - plot.top - plot.bottom;
   const step = plotWidth / points.length;
@@ -93,6 +95,7 @@ const UtilityHistoryChart: FC<UtilityHistoryChartProps> = ({ history, error, end
   const excludedCount = points.reduce((sum, point) => sum + point.excludedCostCount, 0);
   const categoryInfo = categories.find((item) => item.value === category)!;
   const CategoryIcon = categoryInfo.icon;
+  const categoryLogo = UTILITY_CATEGORY_LOGOS[category];
   const showValue = (value: number | null) => value === null
     ? "Nincs adat"
     : mode === "cost" ? formatCost(value) : unit ? formatConsumption(value, unit) : "Nincs mértékegység";
@@ -105,7 +108,11 @@ const UtilityHistoryChart: FC<UtilityHistoryChartProps> = ({ history, error, end
           <div className="flex min-h-11 flex-wrap items-center gap-2" role="group" aria-label="Közműkategória">
             {categories.map((item) => {
               const Icon = item.icon;
-              return <button key={item.value} type="button" aria-pressed={category === item.value} onClick={() => setCategory(item.value)} className={`inline-flex min-h-11 flex-wrap items-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${category === item.value ? `${item.tone} ${item.color} border-current` : "border-border bg-background text-muted-foreground hover:bg-muted"}`}><Icon aria-hidden="true" className="size-4" /><span>{item.label}</span></button>;
+              const logo = UTILITY_CATEGORY_LOGOS[item.value];
+              return <button key={item.value} type="button" aria-pressed={category === item.value} onClick={() => setCategory(item.value)} className={`inline-flex min-h-11 flex-wrap items-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${category === item.value ? `${item.tone} ${item.color} border-current` : "border-border bg-background text-muted-foreground hover:bg-muted"}`}>
+                {logo ? <span className="inline-flex h-8 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white"><Image src={logo.src} alt={logo.name} width={48} height={32} className="h-full w-full object-contain" /></span> : <Icon aria-hidden="true" className="size-4" />}
+                <span>{item.label}</span>
+              </button>;
             })}
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -123,7 +130,9 @@ const UtilityHistoryChart: FC<UtilityHistoryChartProps> = ({ history, error, end
         <section className="rounded-[22px] border border-border bg-card p-5 shadow-sm sm:p-6" aria-labelledby="utility-history-title">
           <div className="flex items-start justify-between gap-3">
             <div><h2 id="utility-history-title" className="text-lg font-semibold tracking-tight text-foreground">{monthLabel(endMonth, true)}</h2><p className="mt-1 text-sm text-muted-foreground">{windowLabel} · {categoryInfo.label}</p></div>
-            <span className={`inline-flex size-11 shrink-0 items-center justify-center rounded-xl ${categoryInfo.tone} ${categoryInfo.color}`}><CategoryIcon aria-hidden="true" className="size-5" /></span>
+            <span className={`inline-flex h-11 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl ${categoryLogo ? "bg-white" : `${categoryInfo.tone} ${categoryInfo.color}`}`}>
+              {categoryLogo ? <Image src={categoryLogo.src} alt={categoryLogo.name} width={64} height={44} className="h-full w-full object-contain" /> : <CategoryIcon aria-hidden="true" className="size-5" />}
+            </span>
           </div>
           <p className="mt-6 text-sm font-medium text-muted-foreground">{mode === "cost" ? "Ismert költség összesen" : `Ismert fogyasztás összesen${unit ? ` · ${unitLabels[unit]}` : ""}`}</p>
           <p className="mt-1 break-words text-4xl font-bold tracking-tight tabular-nums text-foreground sm:text-5xl">{totalOverflow ? "Nem számítható" : knownMonthCount ? showValue(total) : "Nincs adat"}</p>
@@ -146,13 +155,13 @@ const UtilityHistoryChart: FC<UtilityHistoryChartProps> = ({ history, error, end
           </div>
           {error ? <p role="alert" className="mt-5 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm">A diagram adatai most nem tölthetők be.</p> : (
             <>
-              <div className="mt-4 w-full min-w-0 rounded-2xl bg-background px-1 py-3 sm:px-2">
-                <svg aria-hidden="true" className="block h-auto w-full min-w-0" viewBox={`0 0 ${width} ${height}`} role="presentation">
+              <div className="mt-4 w-full min-w-0 overflow-x-auto rounded-2xl bg-background px-1 py-3 sm:px-2">
+                <svg aria-hidden="true" className="block h-auto w-full min-w-[520px]" viewBox={`0 0 ${width} ${height}`} role="presentation">
                   {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
                     const y = plot.top + plotHeight * (1 - fraction);
                     const axisValue = axisMax * fraction;
                     const axisLabel = mode === "cost" ? formatCost(axisValue) : new Intl.NumberFormat("hu-HU", { maximumFractionDigits: 1 }).format(axisValue);
-                    return <g key={fraction}><line x1={plot.left} x2={width - plot.right} y1={y} y2={y} className="stroke-border" /><text x={plot.left - 7} y={y + 4} textAnchor="end" className="fill-muted-foreground" fontSize={monthCount === 12 ? "10" : "12"}>{axisLabel}</text></g>;
+                    return <g key={fraction}><line x1={plot.left} x2={width - plot.right} y1={y} y2={y} className="stroke-border" /><text x={plot.left - 12} y={y + 5} textAnchor="end" className="fill-foreground font-medium" fontSize="14">{axisLabel}</text></g>;
                   })}
                   {points.map((point, index) => {
                     const x = plot.left + step * index + (step - barWidth) / 2;
@@ -160,7 +169,7 @@ const UtilityHistoryChart: FC<UtilityHistoryChartProps> = ({ history, error, end
                     const hideMonthLabel = monthCount === 12 && index % 2 === 1 && index !== points.length - 1;
                     return <g key={point.reportMonth}>
                       {point.value !== null ? <rect x={x} y={plot.top + plotHeight - barHeight} width={barWidth} height={Math.max(2, barHeight)} rx="7" className={index === points.length - 1 ? "fill-primary" : "fill-sky-300"}><title>{`${monthLabel(point.reportMonth, true)}: ${showValue(point.value)}`}</title></rect> : <line x1={x} x2={x + barWidth} y1={plot.top + plotHeight} y2={plot.top + plotHeight} strokeDasharray="3 3" className="stroke-border"><title>{`${monthLabel(point.reportMonth, true)}: ${point.hasReport ? "Nincs összeadható adat" : "Nincs mentett kimutatás"}`}</title></line>}
-                      {!hideMonthLabel && <text x={x + barWidth / 2} y={height - 16} textAnchor="middle" className="fill-muted-foreground" fontSize={monthCount === 12 ? "10" : "12"}>{monthLabel(point.reportMonth)}</text>}
+                      {!hideMonthLabel && <text x={x + barWidth / 2} y={height - 14} textAnchor="middle" className="fill-foreground font-medium" fontSize="14">{monthLabel(point.reportMonth)}</text>}
                     </g>;
                   })}
                 </svg>

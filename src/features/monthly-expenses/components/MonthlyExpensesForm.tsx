@@ -4,11 +4,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, ChevronLeft, ChevronRight, FilePenLine, FileUp, LoaderCircle, Mail, Plus, Trash2 } from "lucide-react";
 import AppCreationBar from "@/components/AppCreationBar";
 import { startTransition, useEffect, useEffectEvent, useRef, useState, type ChangeEvent, type FC, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { unstable_rethrow, useRouter } from "next/navigation";
 import { FormProvider, useFieldArray, useForm, useWatch, type Resolver } from "react-hook-form";
 import toast from "react-hot-toast";
+import Image from "next/image";
 import { useNavigationGuard } from "@/providers/NavigationGuardProvider";
-import { INVOICE_CATEGORY_LABELS, MAX_UPLOAD_BYTES } from "../config";
+import { INVOICE_CATEGORY_LABELS, MAX_UPLOAD_BYTES, UTILITY_CATEGORY_LOGOS } from "../config";
 import { connectGmail } from "../dal/connection";
 import { collectGmailInvoices, importGmailInvoice } from "../dal/mutations";
 import { deleteMonthlyExpenseReport, loadMonthlyExpenseReport, saveMonthlyExpenseReport } from "../dal/mutations";
@@ -425,6 +426,7 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ overviewHeader, ini
       await connectGmail();
       toast.success("A Gmail-összekapcsolás elindult.");
     } catch (error) {
+      unstable_rethrow(error);
       toast.error(error instanceof Error ? error.message : "A Gmail-összekapcsolás nem indítható.");
     } finally {
       setPhase(null);
@@ -645,7 +647,16 @@ const MonthlyExpensesForm: FC<MonthlyExpensesFormProps> = ({ overviewHeader, ini
               <section aria-labelledby="utility-category-overview" className="rounded-[22px] border border-border bg-card p-5 shadow-sm sm:p-6">
                 <div className="flex items-center justify-between gap-3"><h2 id="utility-category-overview" className="text-lg font-semibold tracking-tight">Közművek áttekintése</h2><span className="text-xs text-muted-foreground">legfeljebb 12 mentett hónap</span></div>
                 <ul className="mt-4 space-y-2">
-                  {categoryTotals.map((item) => <li key={item.category} className="flex min-h-14 items-center justify-between gap-3 rounded-xl bg-muted/60 px-3 py-2"><span className="font-medium">{{ water: "Víz", gas: "Gáz", electricity: "Villany", waste: "Hulladék", other: "Egyéb" }[item.category]}</span><span className="text-right"><span className="block font-semibold tabular-nums">{item.overflow ? "Túl nagy összeg" : item.hasValue ? `${formatReportTotal(item.total)} Ft` : "Nincs adat"}</span><span className="text-xs text-muted-foreground">{item.hasValue ? item.excludedCount ? `részleges ismert költség · ${item.excludedCount} kihagyott` : "ismert költség" : item.excludedCount ? `${item.excludedCount} kihagyott tétel` : "nincs rögzítve"}</span></span></li>)}
+                  {categoryTotals.map((item) => {
+                    const logo = UTILITY_CATEGORY_LOGOS[item.category];
+                    return <li key={item.category} className="flex min-h-14 items-center justify-between gap-3 rounded-xl bg-muted/60 px-3 py-2">
+                      <span className="flex min-w-0 items-center gap-3 font-medium">
+                        {logo && <span className="inline-flex h-10 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white"><Image src={logo.src} alt={logo.name} width={56} height={40} className="h-full w-full object-contain" /></span>}
+                        <span>{{ water: "Víz", gas: "Gáz", electricity: "Villany", waste: "Hulladék", other: "Egyéb" }[item.category]}</span>
+                      </span>
+                      <span className="text-right"><span className="block font-semibold tabular-nums">{item.overflow ? "Túl nagy összeg" : item.hasValue ? `${formatReportTotal(item.total)} Ft` : "Nincs adat"}</span><span className="text-xs text-muted-foreground">{item.hasValue ? item.excludedCount ? `részleges ismert költség · ${item.excludedCount} kihagyott` : "ismert költség" : item.excludedCount ? `${item.excludedCount} kihagyott tétel` : "nincs rögzítve"}</span></span>
+                    </li>;
+                  })}
                 </ul>
               </section>
               <section aria-label="Mentett havi kimutatások" className="rounded-[22px] border border-border bg-card p-5 shadow-sm sm:p-6">

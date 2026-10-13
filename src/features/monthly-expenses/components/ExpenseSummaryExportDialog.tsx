@@ -3,6 +3,7 @@
 import { Dialog } from "radix-ui";
 import { Download, LoaderCircle, Mail, X } from "lucide-react";
 import { useRef, useState, type FC } from "react";
+import { unstable_rethrow } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { connectGmailForSending } from "../dal/connection";
 import { sendSummaryEmail } from "../dal/export";
@@ -106,6 +107,7 @@ const ExpenseSummaryExportDialog: FC<ExpenseSummaryExportDialogProps> = ({ snaps
     try {
       await connectGmailForSending();
     } catch (connectError) {
+      unstable_rethrow(connectError);
       setError(connectError instanceof Error ? connectError.message : "A Gmail-kapcsolat most nem indítható el.");
       busyRef.current = false;
       setBusy(false);

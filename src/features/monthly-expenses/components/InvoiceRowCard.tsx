@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, type FC } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { Check, ChevronDown, Droplets, FileText, Flame, MoreHorizontal, Trash2, Zap } from "lucide-react";
 import toast from "react-hot-toast";
-import { CONSUMPTION_UNITS, INVOICE_CATEGORIES, INVOICE_CATEGORY_LABELS, INVOICE_ISSUE_LABELS } from "../config";
+import Image from "next/image";
+import { CONSUMPTION_UNITS, INVOICE_CATEGORIES, INVOICE_CATEGORY_LABELS, INVOICE_ISSUE_LABELS, UTILITY_PROVIDER_LOGOS } from "../config";
 import type { InvoiceField, InvoiceReportInput, InvoiceRowInput } from "../types";
 import { formatMinorAsHuf, parseHungarianAmountToMinor } from "../utils/money";
 import { parseConsumptionQuantityInput } from "../utils/consumption";
@@ -179,6 +180,8 @@ const InvoiceRowCard: FC<InvoiceRowCardProps> = ({ index, onRemove, onPreview })
   const labelClass = "block text-sm font-medium text-foreground";
   const sourceLabels = [...new Set(invoice.sources.map((source) => source.fileName))];
   const CategoryIcon = categoryIcon[invoice.category];
+  const providerName = invoice.providerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const providerLogo = Object.entries(UTILITY_PROVIDER_LOGOS).find(([name]) => providerName.includes(name))?.[1];
   const amountSummary = invoice.amountMinor === null
     ? "Összeg nincs megadva"
     : invoice.currency === "HUF"
@@ -190,7 +193,9 @@ const InvoiceRowCard: FC<InvoiceRowCardProps> = ({ index, onRemove, onPreview })
   return (
     <article className={`overflow-hidden rounded-[20px] border shadow-sm ${categoryTone[invoice.category]}`}>
       <header className="flex flex-wrap items-start gap-3 border-b border-black/5 bg-white/65 p-4 sm:items-center sm:p-5">
-        <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/85 text-foreground shadow-sm"><CategoryIcon aria-hidden="true" className="size-6" /></span>
+        <span className="inline-flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white text-foreground shadow-sm">
+          {providerLogo ? <Image src={providerLogo.src} alt="" width={64} height={48} className="h-full w-full object-contain" /> : <CategoryIcon aria-hidden="true" className="size-6" />}
+        </span>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{INVOICE_CATEGORY_LABELS[invoice.category]} <span aria-hidden="true">·</span> {invoice.documentType ? documentTypeLabel[invoice.documentType] : "Számlatípus nincs megadva"}</p>
           <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">

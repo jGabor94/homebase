@@ -8,6 +8,20 @@ export const INVOICE_CATEGORIES = [
 
 export const GMAIL_CATEGORIES = ["gas", "electricity", "water", "waste"] as const;
 
+export const UTILITY_PROVIDER_LOGOS = {
+  mvm: { src: "/logo/mvm.jpg", name: "MVM" },
+  alfoldviz: { src: "/logo/alfoldviz.jpg", name: "ALFÖLDVÍZ" },
+  mohu: { src: "/logo/mohu.jpg", name: "MOHU" },
+} as const;
+
+export const UTILITY_CATEGORY_LOGOS = {
+  gas: UTILITY_PROVIDER_LOGOS.mvm,
+  electricity: UTILITY_PROVIDER_LOGOS.mvm,
+  water: UTILITY_PROVIDER_LOGOS.alfoldviz,
+  waste: UTILITY_PROVIDER_LOGOS.mohu,
+  other: null,
+} as const;
+
 export const DOCUMENT_TYPES = ["invoice", "credit", "correction", "cancellation"] as const;
 
 export const INVOICE_FIELDS = [
