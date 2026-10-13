@@ -34,7 +34,12 @@ export const { handlers: { GET, POST }, auth, signIn, signOut, unstable_update }
                 if (!storedUser) return null
                 userData = storedUser
             }
-            if (user && account?.provider === "google") {
+            const hasGmailScope = account?.scope?.split(/\s+/).some((scope) =>
+                scope === "https://www.googleapis.com/auth/gmail.readonly" ||
+                scope === "https://www.googleapis.com/auth/gmail.send"
+            )
+            // Basic Google sign-in must not replace the credentials saved for Gmail access.
+            if (user && account?.provider === "google" && hasGmailScope) {
                 try {
                     await db.update(accountsTable).set({
                     access_token: account.access_token,
