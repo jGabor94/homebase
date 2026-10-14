@@ -13,7 +13,7 @@ A család saját üzenőfala vizuális, rich-text szerkesztővel és papírcetli
 - Új jegyzet alapértelmezésben **Privát**. A tulajdonos bármikor **Családdal megosztott** állapotra válthat, majd visszaállíthatja privátra.
 - Csak a tulajdonos szerkeszthet, törölhet és módosíthat láthatóságot. A család többi tagja a megosztott jegyzetet olvashatja.
 - Az `/app/notes` üzenőfal a saját privát és a családdal megosztott jegyzeteket együtt mutatja, legutóbbi módosítás szerint rendezve.
-- A jegyzetek meleg pasztellszínű papírcetlik, finom árnyékkal és visszafogott ragasztószalag-dekorációval. Mobilon egy oszlopba rendeződnek.
+- A jegyzetek pasztellszínű kártyák finom kerettel és árnyékkal, ragasztószalag-dekoráció nélkül. Mobilon egy oszlopba rendeződnek; keresés, láthatóságszűrés, rendezés és rács/lista nézet segíti a böngészést.
 
 ## Dokumentáció
 
@@ -22,7 +22,7 @@ A család saját üzenőfala vizuális, rich-text szerkesztővel és papírcetli
 
 ## Kiinduló állapot és határok
 
-A jelenlegi `/app` oldalon fiktív jegyzetek vannak. A valódi jegyzetfal a `/app/notes` route-on működik, a sidebarból és a bemutató jegyzetrészből elérhetően. A családtagi hozzáférés nem következik automatikusan a Google-belépésből: kizárólag az explicit `notesMember` szerepkörrel rendelkező felhasználók kapnak hozzáférést. Az admin szerepkör sem ad automatikusan betekintést a jegyzetekbe.
+A `/app` dashboard a valódi, jogosultan olvasható jegyzetek rövid előnézetét mutatja. A teljes jegyzetfal a `/app/notes` route-on működik, a navigációból és a dashboardról elérhetően. A családtagi hozzáférés nem következik automatikusan a Google-belépésből: kizárólag az explicit `notesMember` szerepkörrel rendelkező felhasználók kapnak hozzáférést. Az admin szerepkör sem ad automatikusan betekintést a jegyzetekbe.
 
 A `notes` tábla, indexek, FK, check constraint-ek és RLS a felhasználó külön jóváhagyása után, a `20261012163347_notes-board` Drizzle migrációval létrejöttek. A migráció naplózva van; a régi migráció változatlan. A konfigurált kapcsolat a `development` ágra mutat, a production ág nem változott. A megadott, létező fiók a korábbi szerepköre mellé kapott `notesMember` hozzáférést. A másik megadott fiók még nem létezik: az első Google-belépés után explicit kiosztás szükséges, nincs automatikus regisztrációs jogosultság. Környezeti fájl nem változott.
 
@@ -32,7 +32,7 @@ A `notes` tábla, indexek, FK, check constraint-ek és RLS a felhasználó kül�
 
 A development adatbázison sikeres visszagörgetett migrációs próba, Drizzle-bevezetés és tárolási CRUD-/verzióellenőrzés futott. A tényleges notes lekérdezésekkel, két szintetikus taggal igazolt a privát/családi szűrés, a láthatóságváltás, a 30 elem feletti lapozás és a tagság visszavonása. A próba nem hagyott tesztfelhasználót vagy tesztjegyzetet. A teljes, Google-belépéssel induló hidratált böngészős munkafolyamat még nincs igazolva.
 
-Az első változat egyetlen családot szolgál ki. Nem tartalmaz közös szerkesztést, hozzászólásokat, mellékleteket, értesítéseket, keresőt, címkéket, kitűzést vagy kézzel mozgatható cetliket.
+Az első változat egyetlen családot szolgál ki. Nem tartalmaz közös szerkesztést, hozzászólásokat, mellékleteket, értesítéseket, címkéket, kitűzést vagy kézzel mozgatható cetliket.
 
 ## Családtagi hozzáférés kiosztása
 

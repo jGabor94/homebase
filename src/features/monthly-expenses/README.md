@@ -2,6 +2,8 @@
 
 A család kézzel indított havi elszámolásai: számlák előkészítése Gmailből, feltöltött PDF-ből vagy kézi adatbevitellel, valamint előre felvett havi költségek kezelése.
 
+A közműváltó, az áttekintés és a dashboard a `public/logo` szolgáltatói logóit használja: MVM a gáznál és villanynál, ALFÖLDVÍZ a víznél, MOHU a hulladéknál. A számlakártya a szolgáltató neve alapján választ logót; ismeretlen szolgáltatónál a kategóriaikon marad. A havi diagram 14 egységes, kontrasztos tengelyfeliratokat használ; keskeny nézetben az 520 px minimális rajzszélesség oldalra görgethető, így a feliratok nem zsugorodnak olvashatatlanra.
+
 ## Állapot
 
 Frissítve: **2026-10-11**. Az aktuális működést ez a README és az aktív mérnöki dokumentumok rögzítik; a [korábbi átadási jegyzet](../../../.claude/handoffs/2026-10-06-182233-monthly-expenses.md) történeti háttér.
@@ -55,6 +57,8 @@ Szöveges AI-kinyerésnél a számozott oldalszöveget küldjük. Ha az AI-ág k
 Az AI elsődleges használata és a PDF-küldés költsége felmerült, de az átállás nem történt meg, a díjbecslés nem készült el. Modellárat és free-tier jogosultságot az új szálban aktuális hivatalos forrásból kell ellenőrizni.
 
 ### Környezet és Gmail-kapcsolat
+
+A sima Google-belépés megőrzi a Gmailhez mentett tokeneket, lejáratot és scope-ot; ezeket csak Gmail-engedélyt is tartalmazó OAuth-válasz frissíti. A Gmail olvasási és küldési engedélyét kérő gombok továbbengedik a Next.js átirányításjelzését, így az nem jelenik meg hibaként.
 
 A környezeti változókat a tulajdonos adja meg a futtatókörnyezetben. A kulcsok kizárólag szerveroldalon használhatók; ne legyen `NEXT_PUBLIC_` előtagjuk, és ne kerüljenek a repositoryba.
 

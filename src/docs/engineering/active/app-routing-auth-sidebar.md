@@ -40,7 +40,7 @@ src/
     login/page.tsx                # Google-belépés
     app/
       layout.tsx                  # session guard és közös sidebar shell
-      page.tsx                    # meglévő dashboard, mintaadatokkal
+      page.tsx                    # dashboard, jogosultan olvasott valódi adatokkal
       monthly-expenses/
         page.tsx
         loading.tsx
@@ -68,6 +68,8 @@ A proxy útvonalvizsgálata nem végez új adatbázis-lekérdezést. A meglévő
 
 A normál bejelentkezés csak az identitáshoz szükséges Google scope-okat használja. A Gmail-hozzájárulás továbbra is külön, meglévő művelet; annak visszatérési címe `/app/monthly-expenses`. Az OAuth callback útvonala továbbra is `/api/auth/callback/google`.
 
+A Google-belépés csak akkor frissíti az account sorban tárolt hozzáférési adatokat, ha a kapott scope tartalmazza a `gmail.readonly` vagy `gmail.send` engedélyt. Az egyszerű identitásbelépés megőrzi a Gmailhez tartozó access tokent, refresh tokent, lejáratot és scope-ot. Gmail-csatlakoztatáskor a kliens hibakezelője a Next.js átirányításjelzését az `unstable_rethrow` függvénnyel továbbengedi; a `NEXT_REDIRECT` nem felhasználói hiba-toast.
+
 ## Landing, login és sidebar
 
 - A landing rövid magyar Homebase-bemutatkozást és `/login` címre vezető belépési lehetőséget kínál. Nem tölt be számlákat, sessiontől függő privát adatot vagy app sidebart. Bejelentkezett felhasználó számára is közvetlenül megtekinthető; lehet rajta statikus `/app` hivatkozás.
@@ -76,7 +78,8 @@ A normál bejelentkezés csak az identitáshoz szükséges Google scope-okat has
 - Menüpontok: Áttekintés `/app`; Közművek `/app/monthly-expenses`; Beállítások `/app/settings`. A két utóbbi csak a meglévő read jogosultsággal látszik. A 2026-10-12-én implementált Jegyzetek menüpont `/app/notes` címre mutat, friss adatbázis-adatból ellenőrzött notes hozzáféréssel. A részletes hozzáférési és bevezetési szabályokat a [notes specifikációja](../../../features/notes/docs/engineering/active/notes-board.md) írja le.
 - Az aktív Áttekintés csak pontos `/app` egyezésnél aktív; a többi oldal szegmenshatárral illeszkedik. A Jegyzetek szakaszlink nem kap hamis oldalaktív állapotot.
 - A redesign óta 1024 px-től shadcn oldalsáv, kisebb képernyőn jogosultságszűrt alsó navigáció és profilmenü működik, billentyűzetes vezérléssel és safe-area-val. A navigáció `next/link` hivatkozásokat használ.
-- A sidebar footerében a sessionből származó név/e-mail és kijelentkezés szerepel; OAuth token vagy teljes sessionobjektum nem kerül klienspropba. Kijelentkezés után a cél `/`.
+- Asztali nézetben a név/e-mail és kijelentkezés a felső profilmenüben érhető el; a sidebar profilblokkja, kijelentkezése és alsó elválasztója 1024 px-től rejtett. Kisebb képernyőn a sidebar lábléce megmarad. OAuth token vagy teljes sessionobjektum nem kerül klienspropba. Kijelentkezés után a cél `/`.
+- A sidebar alsó promópanelje saját keret nélkül jelenik meg. A globális `caret-color: transparent` elrejti a villogó szövegkurzort, a szöveg kijelölhetősége és a szerkesztés megmarad.
 - A 2026-10-12-i redesign világos/petrol témát, pasztell paneleket és sans címeket vezetett be. A megjelenés aktuális forrása az app-redesign mérnöki specifikáció és a .agents/DESIGN.md.
 
 ## Kompatibilitás és határok

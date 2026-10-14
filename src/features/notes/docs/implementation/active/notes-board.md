@@ -38,6 +38,8 @@ A tervezett külön `NoteDialog` helyett a modál és az állapotátmenetei a `N
 
 ## Ellenőrzési eredmények
 
+Az alábbi eredmények korábbi futásokból származnak. A karakteres smiley-k bevezetése után az `emoticons.test.ts` és `formatting.test.ts` együtt **11/11 sikeres** tesztet adott, a TypeScript-ellenőrzés is sikeres volt. Ezek igazolják a mentési normalizálást és a megjelenítést, de nem helyettesítik a hidratált böngészős próbát. A jelenlegi dokumentációs commit és push során a felhasználó kérésére nem fut új build, lint vagy teszt.
+
 | Ellenőrzés | Eredmény és határ |
 | --- | --- |
 | `npm run test:notes` | **10/10 sikeres** a fő rich text változtatás után; a végső legacy fallback renderelés célzott formázási tesztjei külön **6/6 sikeresek** |
